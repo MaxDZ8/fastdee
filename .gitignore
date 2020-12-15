@@ -1,3 +1,5 @@
 fastdee/obj/
 .vs/
 fastdee/bin/
+fastdee.Tests/obj/
+fastdee.Tests/bin/

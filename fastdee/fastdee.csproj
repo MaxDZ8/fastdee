@@ -2,7 +2,17 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
+
+    <LangVersion>9.0</LangVersion>
+    <Nullable>enable</Nullable>
+    
+    <Authors>MaxDZ8</Authors>
+    <Company>-</Company>
+    <Product />
+    <Description>Part of the experimental, heterogeneous fast-dispatch ecosystem.
+Fastdee sits between a stratum pool and the workers, isolating them from network complexity so they can focus on being simple.</Description>
+    <PackageProjectUrl>https://github.com/MaxDZ8/fastdee</PackageProjectUrl>
   </PropertyGroup>
 
 </Project>
