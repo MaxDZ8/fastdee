@@ -110,7 +110,7 @@ namespace fastdee
             return true;
         }
 
-        public async Task Write(string raw)
+        public async Task WriteAsync(string raw)
         {
             raw += '\n';
             var buffer = Encoding.UTF8.GetBytes(raw);

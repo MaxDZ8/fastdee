@@ -14,7 +14,7 @@ namespace fastdee
     /// Json-rpc communication bidirectional abstraction.
     /// Send and receive strings.
     /// 
-    /// Thread safety: implementations can either delegate protection of <see cref="Write(string)"/> calls to higher levels
+    /// Thread safety: implementations can either delegate protection of <see cref="WriteAsync(string)"/> calls to higher levels
     /// or protect internally. Strings must be sent "atomically".
     /// </summary>
     interface ILineChannel
@@ -25,7 +25,7 @@ namespace fastdee
         /// Providing a string with internal newlines (ascii 10, 13, whatever unicode might consider newline)
         /// produces undefined results.
         /// </summary>
-        Task Write(string raw);
+        Task WriteAsync(string raw);
 
         /// <summary>
         /// Collected enough data to form a line.

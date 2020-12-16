@@ -7,25 +7,40 @@ namespace fastdee
 {
     class Program
     {
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
-            var options = new Args();
-            if (Parser.Default.ParseArguments<Args>(args).WithParsed(good => options = good).Tag == ParserResultType.NotParsed)
+            return Parser.Default.ParseArguments<Args>(args).MapResult(
+                options => MainWithParsed(options),
+                _ => -1);
+        }
+
+        static int MainWithParsed(Args options)
+        {
+            // Pool server needs some additional parsing while I grok the documentation and find out if the lib can parse for me.
+            string poolurl;
+            ushort poolport;
             {
-                Environment.ExitCode = 1;
-                return;
+                var parts = options.Pool.Split(':');
+                if (parts.Length != 2) throw new ApplicationException("Does not look like valid POOL:PORT endpoint!");
+                poolurl = parts[0];
+                poolport = ushort.Parse(parts[1]);
             }
-            // I need to read the parser library documentation and figure out if it can validate those things for me.
-            // I'm inclined to believe the question is not really "if" but rather just "how".
-            var parts = options.Pool.Split(':');
-            var uri = parts[0];
-            var port = ushort.Parse(parts[1]);
-            var addr = Dns.GetHostAddresses(uri)[0];
-            var endpoint = new IPEndPoint(addr, port);
-            using var socket = new Socket(endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            socket.Connect(endpoint);
-            Console.Write("made a connection");
-            System.Threading.Thread.Sleep(1234);
+            var presentingAs = options.SubscribeAs ?? MyCanonicalSubscription();
+            new Stratificator(poolurl, poolport).PumpForeverAsync(presentingAs).Wait(); // TODO: the other services
+            return -2;
+        }
+
+        static string MyCanonicalSubscription()
+        {
+            var version = System.Reflection.Assembly.GetExecutingAssembly().GetName()?.Version;
+            if (null == version) // apparently this can happen with single-file assembly bundles or whatever they are called
+            {
+                return "fastdee";
+            }
+            var major = (uint)version.Major;
+            var minor = (uint)version.Minor;
+            var patch = (uint)version.Build;
+            return $"fastdee/{major}.{minor}.{patch}";
         }
     }
 }

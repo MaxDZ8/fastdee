@@ -8,6 +8,6 @@ namespace fastdee
         public string Pool { get; set; } = "";
 
         [Option('f', "fakeVersion", Required = false, HelpText = "Want to mess with the server? Specify your preferred program version to the server!")]
-        public string? PresentationVersion { get; set; }
+        public string? SubscribeAs { get; set; }
     }
 }
