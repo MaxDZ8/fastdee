@@ -5,9 +5,9 @@ namespace fastdee.Stratum
     /// <summary>
     /// Isolates the various policies to turn magic result values into concrete instances.
     /// </summary>
-    class ResponseParser
+    public class ResponseParser
     {
-        internal Response.MiningSubscribe MiningSubscribe(object? jsonLine)
+        public Response.MiningSubscribe MiningSubscribe(object? jsonLine)
         {
             throw new NotImplementedException(); // we apparently enjoy TDD
         }

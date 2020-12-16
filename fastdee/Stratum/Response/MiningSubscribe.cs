@@ -6,7 +6,7 @@
     /// I have considered using c#9 records here. They are convenient as (for positionals) their constructors implicitly declare
     /// the interesting fields but they also generate things I don't really care about so this stays class.
     /// </summary>
-    class MiningSubscribe
+    public class MiningSubscribe
     {
         public readonly string sessionId;
         public readonly byte[] extraNonceOne;
