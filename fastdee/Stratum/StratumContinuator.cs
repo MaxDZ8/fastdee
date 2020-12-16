@@ -18,9 +18,10 @@ namespace fastdee.Stratum
         public async Task Subscribe(string version)
         {
             var args = new string[] { version };
-            var send = matcher.Request("mining.subscribe", args, result => parsers.MiningSubscribe(result));
+            var (send, task) = matcher.Request("mining.subscribe", args, result => parsers.MiningSubscribe(result));
             var json = JsonConvert.SerializeObject(send);
             await sendToServer(json);
+            await task;
         }
 
         /// <summary>

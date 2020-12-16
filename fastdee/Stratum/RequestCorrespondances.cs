@@ -21,6 +21,8 @@ namespace fastdee.Stratum
             /// Called if the reply matched by id has a "error" field.
             /// </summary>
             void Failure(Exception ohno);
+
+            Task Task { get; }
         }
 
         class Tracked<T> : ITracked
@@ -50,12 +52,14 @@ namespace fastdee.Stratum
             /// And it can itself boom.
             /// </summary>
             public void Failure(Exception ohno) => tcs.TrySetException(ohno);
+
+            public Task Task => tcs.Task;
         }
 
         ulong msgid;
         readonly Dictionary<ulong, ITracked> pending = new Dictionary<ulong, ITracked>();
 
-        internal JsonRpc.Request Request<T>(string methodName, object[] args, Func<object?, T> parser)
+        internal (JsonRpc.Request, Task) Request<T>(string methodName, object[] args, Func<object?, T> parser)
         {
             var id = System.Threading.Interlocked.Increment(ref msgid);
             var send = new JsonRpc.Request(id, methodName, args);
@@ -64,7 +68,7 @@ namespace fastdee.Stratum
             {
                 pending.Add(id, track);
             }
-            return send;
+            return (send, track.Task);
         }
 
         internal bool Trigger(JsonRpc.Response gotcha)
