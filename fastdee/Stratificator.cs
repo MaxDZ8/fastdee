@@ -59,7 +59,7 @@ namespace fastdee
             pumper.GottaLine += (src, ev) =>
             {
                 var stuff = Newtonsoft.Json.JsonConvert.DeserializeObject<JsonRpc.Message>(ev.payload);
-                if (stuff.id.HasValue) continuator.MangleLine(stuff.id.Value, stuff.rawRes, stuff.rawErr);
+                if (stuff.id.HasValue) continuator.MangleReply(stuff.id.Value, stuff.rawRes, stuff.rawErr);
                 else if (stuff.method != null)
                 { // native notification
                     throw new System.NotImplementedException();
@@ -71,7 +71,7 @@ namespace fastdee
             };
 
             lock (delicate) delicate.state = StratumState.Subscribing;
-            var subscribed = await continuator.Subscribe(presentingAs);
+            var subscribed = await continuator.SubscribeAsync(presentingAs);
             lock (delicate)
             {
                 delicate.state = StratumState.Authorizing;
