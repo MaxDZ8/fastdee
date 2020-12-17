@@ -44,7 +44,9 @@ namespace fastdee.Stratum
 
         public bool MiningAuthorize(object? result)
         {
-            throw new System.NotImplementedException();
+            if (null == result) throw new MissingRequiredException("mining.authorize: outcome missing");
+            if (result is bool real) return real;
+            throw new BadParseException("mining.authorize: authorization must be true/false");
         }
 
         static byte[] DecodeHex(string hex)
