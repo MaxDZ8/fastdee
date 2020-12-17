@@ -126,5 +126,16 @@ namespace fastdee.Tests.Stratum
             Assert.Throws<BadParseException>(() => new ResponseParser().MiningSubscribe(uglee));
 
         }
+
+        [Theory]
+        [InlineData("true")]
+        [InlineData("false")] // from M8M, I haven't seen a reply of this kind in ages!
+        public void ParsableAutorizationReply(string json)
+        {
+            var asParsed = JsonConvert.DeserializeObject<bool>(json);
+            var got = new ResponseParser().MiningAuthorize(asParsed);
+            var bleh = JsonConvert.SerializeObject(got);
+            Assert.Equal(json, bleh);
+        }
     }
 }

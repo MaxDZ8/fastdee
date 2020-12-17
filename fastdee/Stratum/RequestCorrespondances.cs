@@ -57,7 +57,7 @@ namespace fastdee.Stratum
         ulong msgid;
         readonly Dictionary<ulong, ITracked> pending = new Dictionary<ulong, ITracked>();
 
-        internal (JsonRpc.Request, Task<T>) Request<T>(string methodName, object[] args, Func<object?, T> parser)
+        internal PendingRequest<T> Request<T>(string methodName, object[] args, Func<object?, T> parser)
         {
             var id = System.Threading.Interlocked.Increment(ref msgid);
             var send = new JsonRpc.Request(id, methodName, args);
@@ -66,7 +66,7 @@ namespace fastdee.Stratum
             {
                 pending.Add(id, track);
             }
-            return (send, track.Task);
+            return new PendingRequest<T>(send, track.Task);
         }
 
         internal bool Trigger(ulong id, object? result, object? error)

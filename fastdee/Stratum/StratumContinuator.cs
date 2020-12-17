@@ -18,15 +18,19 @@ namespace fastdee.Stratum
         public Task<Response.MiningSubscribe> SubscribeAsync(string version)
         {
             var args = new string[] { version };
-            var (send, task) = matcher.Request("mining.subscribe", args, result => parsers.MiningSubscribe(result));
-            var json = JsonConvert.SerializeObject(send);
-            WrappedSend(json);
-            return task;
+            var req = matcher.Request("mining.subscribe", args, result => parsers.MiningSubscribe(result));
+            WrappedSend(req.request);
+            return req.task;
         }
 
         public PendingAuth Authorize(string user, string worker, string sillyPass)
         {
-            throw new NotImplementedException();
+            var login = $"{user}.{worker}";
+            var args = new string[] { login, sillyPass };
+            var req = matcher.Request("mining.authorize", args, result => parsers.MiningAuthorize(result));
+            void ImplicitOutcome(bool uglee) => matcher.Trigger(req.request.id, uglee, null);
+            WrappedSend(req.request);
+            return new PendingAuth(req.task, ImplicitOutcome);
         }
 
         void WrappedSend(object gizmo)

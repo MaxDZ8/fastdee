@@ -42,6 +42,11 @@ namespace fastdee.Stratum
             return new Response.MiningSubscribe(sessionId, extraNonce1, (ushort)nonce2sz);
         }
 
+        public bool MiningAuthorize(object? result)
+        {
+            throw new System.NotImplementedException();
+        }
+
         static byte[] DecodeHex(string hex)
         {
             if (hex.Length == 0) throw new BadParseException("Hexadecimal strings cannot be empty");
