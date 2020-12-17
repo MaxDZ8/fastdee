@@ -13,10 +13,8 @@ namespace fastdee.Stratum
         /// </summary>
         public Response.MiningSubscribe MiningSubscribe(object? jsonLine)
         {
-            var arr = jsonLine as JArray;
-            if (null == arr) throw new BadParseException("mining.subscribe: result must be an array");
-            var first = arr[0] as JArray;
-            if (null == first) throw new BadParseException("mining.subscribe: result[0] must be an array");
+            if (jsonLine is not JArray arr) throw new BadParseException("mining.subscribe: result must be an array");
+            if (arr[0] is not JArray first) throw new BadParseException("mining.subscribe: result[0] must be an array");
             var parts = from el in first
                         where el.Type == JTokenType.Array
                         select el as JArray;
