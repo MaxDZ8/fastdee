@@ -23,7 +23,7 @@ namespace fastdee.Tests.Stratum
         {
             // That's how it comes out from the parsing. I don't like it at all but that's it.
             var uglee = JsonConvert.DeserializeObject<Newtonsoft.Json.Linq.JArray>(dummyReply);
-            var response = new ResponseParser().MiningSubscribe(uglee);
+            var response = ResponseParser.MiningSubscribe(uglee);
 
             Assert.Equal(sessionId, response.sessionId);
             Assert.Equal(extraNonce1, response.extraNonceOne);
@@ -54,7 +54,7 @@ namespace fastdee.Tests.Stratum
         public void ParsingWeirdSubscribeReply(string dummyReply, string sessionId, byte[] extraNonce1, int extraNonce2sz)
         {
             var uglee = JsonConvert.DeserializeObject<Newtonsoft.Json.Linq.JArray>(dummyReply);
-            var response = new ResponseParser().MiningSubscribe(uglee);
+            var response = ResponseParser.MiningSubscribe(uglee);
 
             Assert.Equal(sessionId, response.sessionId);
             Assert.Equal(extraNonce1, response.extraNonceOne);
@@ -67,7 +67,7 @@ namespace fastdee.Tests.Stratum
         {
             var dummyReply = "[[[\"mining.set_difficulty\",\"deadbeefcafebabecffd010000000000\"]],\"0800c0ff\",4]";
             var uglee = JsonConvert.DeserializeObject<Newtonsoft.Json.Linq.JArray>(dummyReply);
-            Assert.Throws<MissingRequiredException>(() => new ResponseParser().MiningSubscribe(uglee));
+            Assert.Throws<MissingRequiredException>(() => ResponseParser.MiningSubscribe(uglee));
         }
 
         // nonce1 can be any length, really (whatever that means later)
@@ -81,7 +81,7 @@ namespace fastdee.Tests.Stratum
         public void SubscribeReplyExtranonceCanHaveDifferentLengths(string dummyReply, string sessionId, byte[] extraNonce1, int extraNonce2sz)
         {
             var uglee = JsonConvert.DeserializeObject<Newtonsoft.Json.Linq.JArray>(dummyReply);
-            var response = new ResponseParser().MiningSubscribe(uglee);
+            var response = ResponseParser.MiningSubscribe(uglee);
 
             Assert.Equal(sessionId, response.sessionId);
             Assert.Equal(extraNonce1, response.extraNonceOne);
@@ -97,7 +97,7 @@ namespace fastdee.Tests.Stratum
         public void SubscribeReplyExtranonceMustBeNonempty(string dummyReply)
         {
             var uglee = JsonConvert.DeserializeObject<Newtonsoft.Json.Linq.JArray>(dummyReply);
-            Assert.Throws<MissingRequiredException>(() => new ResponseParser().MiningSubscribe(uglee));
+            Assert.Throws<MissingRequiredException>(() => ResponseParser.MiningSubscribe(uglee));
         }
 
         [Theory]
@@ -106,7 +106,7 @@ namespace fastdee.Tests.Stratum
         public void SubscribeReplyExtranonceMustBeIntegralHex(string dummyReply)
         {
             var uglee = JsonConvert.DeserializeObject<Newtonsoft.Json.Linq.JArray>(dummyReply);
-            Assert.Throws<BadParseException>(() => new ResponseParser().MiningSubscribe(uglee));
+            Assert.Throws<BadParseException>(() => ResponseParser.MiningSubscribe(uglee));
         }
 
         [Fact]
@@ -114,7 +114,7 @@ namespace fastdee.Tests.Stratum
         {
             var bruh = "[[[\"mining.set_difficulty\",\"deadbeefcafebabecffd010000000000\"],[\"mining.notify\",\"deadbeefcafebabecffd010000000000\"]],\"0800c0ff\",-1]";
             var uglee = JsonConvert.DeserializeObject<Newtonsoft.Json.Linq.JArray>(bruh);
-            Assert.Throws<BadParseException>(() => new ResponseParser().MiningSubscribe(uglee));
+            Assert.Throws<BadParseException>(() => ResponseParser.MiningSubscribe(uglee));
 
         }
 
@@ -123,7 +123,7 @@ namespace fastdee.Tests.Stratum
         {
             var bruh = "[[[\"mining.set_difficulty\",\"deadbeefcafebabecffd010000000000\"],[\"mining.notify\",\"deadbeefcafebabecffd010000000000\"]],\"0800c0ff\",8]";
             var uglee = JsonConvert.DeserializeObject<Newtonsoft.Json.Linq.JArray>(bruh);
-            Assert.Throws<BadParseException>(() => new ResponseParser().MiningSubscribe(uglee));
+            Assert.Throws<BadParseException>(() => ResponseParser.MiningSubscribe(uglee));
 
         }
 
@@ -133,7 +133,7 @@ namespace fastdee.Tests.Stratum
         public void ParsableAutorizationReply(string json)
         {
             var asParsed = JsonConvert.DeserializeObject<bool>(json);
-            var got = new ResponseParser().MiningAuthorize(asParsed);
+            var got = ResponseParser.MiningAuthorize(asParsed);
             var bleh = JsonConvert.SerializeObject(got);
             Assert.Equal(json, bleh);
         }

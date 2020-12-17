@@ -10,7 +10,6 @@ namespace fastdee.Stratum
     public class StratumContinuator : IRequestContinuator, IDisposable
     {
         readonly RequestCorrespondances matcher = new RequestCorrespondances();
-        readonly ResponseParser parsers = new ResponseParser();
         readonly Func<string, Task> sendToServer;
 
         public StratumContinuator(Func<string, Task> sendToServer) { this.sendToServer = sendToServer; }
@@ -18,7 +17,7 @@ namespace fastdee.Stratum
         public Task<Response.MiningSubscribe> SubscribeAsync(string version)
         {
             var args = new string[] { version };
-            var req = matcher.Request("mining.subscribe", args, result => parsers.MiningSubscribe(result));
+            var req = matcher.Request("mining.subscribe", args, result => ResponseParser.MiningSubscribe(result));
             WrappedSend(req.request);
             return req.task;
         }
@@ -27,7 +26,7 @@ namespace fastdee.Stratum
         {
             var login = $"{user}.{worker}";
             var args = new string[] { login, sillyPass };
-            var req = matcher.Request("mining.authorize", args, result => parsers.MiningAuthorize(result));
+            var req = matcher.Request("mining.authorize", args, result => ResponseParser.MiningAuthorize(result));
             void ImplicitOutcome(bool uglee) => matcher.Trigger(req.request.id, uglee, null);
             WrappedSend(req.request);
             return new PendingAuth(req.task, ImplicitOutcome);

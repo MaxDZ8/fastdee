@@ -6,12 +6,12 @@ namespace fastdee.Stratum
     /// <summary>
     /// Isolates the various policies to turn magic result values into concrete instances.
     /// </summary>
-    public class ResponseParser
+    public static class ResponseParser
     {
         /// <summary>
         /// Parsing the response of "mining.subscribe". It is quite convoluted as this uses heterogeneous arrays.
         /// </summary>
-        public Response.MiningSubscribe MiningSubscribe(object? jsonLine)
+        static public Response.MiningSubscribe MiningSubscribe(object? jsonLine)
         {
             if (jsonLine is not JArray arr) throw new BadParseException("mining.subscribe: result must be an array");
             if (arr[0] is not JArray first) throw new BadParseException("mining.subscribe: result[0] must be an array");
@@ -40,7 +40,7 @@ namespace fastdee.Stratum
             return new Response.MiningSubscribe(sessionId, extraNonce1, (ushort)nonce2sz);
         }
 
-        public bool MiningAuthorize(object? result)
+        static public bool MiningAuthorize(object? result)
         {
             if (null == result) throw new MissingRequiredException("mining.authorize: outcome missing");
             if (result is bool real) return real;
