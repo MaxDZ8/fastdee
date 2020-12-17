@@ -8,5 +8,6 @@ namespace fastdee.Stratum
 {
     public class MissingRequiredException : ApplicationException
     {
+        public MissingRequiredException(string? message) : base(message) { }
     }
 }

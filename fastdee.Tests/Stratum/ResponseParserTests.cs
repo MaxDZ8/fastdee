@@ -77,7 +77,7 @@ namespace fastdee.Tests.Stratum
             "deadbeefcafebabecffd010000000000", new byte[] { 0xab, 0xcd, 0x08, 0x00, 0xc0, 0xff }, 4)]
         [InlineData(
             "[[[\"mining.set_difficulty\",\"deadbeefcafebabecffd010000000000\"],[\"mining.notify\",\"deadbeefcafebabecffd010000000000\"]],\"fe\",4]",
-            "deadbeefcafebabecffd010000000000", new byte[] { 0x08, 0x00, 0xc0, 0xff }, 4)]
+            "deadbeefcafebabecffd010000000000", new byte[] { 254 }, 4)]
         public void SubscribeReplyExtranonceCanHaveDifferentLengths(string dummyReply, string sessionId, byte[] extraNonce1, int extraNonce2sz)
         {
             var uglee = JsonConvert.DeserializeObject<Newtonsoft.Json.Linq.JArray>(dummyReply);
@@ -119,7 +119,7 @@ namespace fastdee.Tests.Stratum
         }
 
         [Fact]
-        public void SubscribeReplyExtra2SzMustBe4() // ok really, I'm taking it easy for the time being.
+        public void SubscribeReplyExtra2SzMustBe4() // ok really, I'm taking it easy for the time being. Even though bigger nonces might be useful in the future.
         {
             var bruh = "[[[\"mining.set_difficulty\",\"deadbeefcafebabecffd010000000000\"],[\"mining.notify\",\"deadbeefcafebabecffd010000000000\"]],\"0800c0ff\",8]";
             var uglee = JsonConvert.DeserializeObject<Newtonsoft.Json.Linq.JArray>(bruh);

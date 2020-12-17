@@ -24,11 +24,20 @@ namespace fastdee.Stratum
                              where el.Count == 2
                              where el[0].Type == JTokenType.String && el[0].Value<string>() == "mining.notify"
                              where el[1].Type == JTokenType.String
-                             select el[1].Value<string>()).FirstOrDefault() ?? "";
-            if (arr[1].Type != JTokenType.String) throw new BadParseException("mining.subscribe: result[1] must be a string");
-            var extraNonce1 = DecodeHex(arr[1].Value<string>().Trim());
+                             select el[1].Value<string>()).FirstOrDefault();
+            if (null == sessionId) throw new MissingRequiredException("mining.subscribe: couldn't find any sessionid mining.notify pair");
+            if (arr[1].Type != JTokenType.String)
+            {
+                var careful = arr[1].Type;
+                if (careful == JTokenType.Undefined || careful == JTokenType.Null) throw new MissingRequiredException("mining.subscribe: missing extraNonce1");
+                throw new BadParseException("mining.subscribe: extraNonce1 must be a string");
+            }
+            var extra1str = arr[1].Value<string>().Trim();
+            if (extra1str.Length == 0) throw new MissingRequiredException("mining.subscribe: extraNonce1 is an empty string");
+            var extraNonce1 = DecodeHex(extra1str);
             if (arr[2].Type != JTokenType.Integer) throw new BadParseException("mining.subscribe: result[2] must be an integral number");
             var nonce2sz = arr[2].Value<long>();
+            if (nonce2sz != 4) throw new BadParseException("mining.subscribe: for the time being, nonce2sz must be 4");
             if (nonce2sz < 0 || nonce2sz > ushort.MaxValue) throw new BadParseException($"mining.subscribe: nonce2sz is invalid ({nonce2sz})");
             return new Response.MiningSubscribe(sessionId, extraNonce1, (ushort)nonce2sz);
         }
@@ -47,7 +56,7 @@ namespace fastdee.Stratum
 
         static byte HexValue(char digit)
         {
-            if (digit >= '0' && digit <= '9') return (byte)(digit - '0');
+            if (digit >= '0' && digit <= '9') return (byte)(     digit - '0');
             if (digit >= 'a' && digit <= 'f') return (byte)(10 + digit - 'a');
             throw new BadParseException("Invalid character in hex digit");
         }
