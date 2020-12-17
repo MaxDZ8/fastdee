@@ -3,3 +3,4 @@ fastdee/obj/
 fastdee/bin/
 fastdee.Tests/obj/
 fastdee.Tests/bin/
+fastdee/Properties/launchSettings.json

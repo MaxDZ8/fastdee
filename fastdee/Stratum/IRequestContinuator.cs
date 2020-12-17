@@ -7,6 +7,6 @@ namespace fastdee.Stratum
     /// </summary>
     interface IRequestContinuator
     {
-        Task Subscribe(string version);
+        Task<Response.MiningSubscribe> Subscribe(string version);
     }
 }
