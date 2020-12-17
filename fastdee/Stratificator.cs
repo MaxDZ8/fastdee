@@ -56,13 +56,16 @@ namespace fastdee
             // Nothing will come before I send anything.
             using var pumper = new SocketPipelinesLineChannel(socket);
             using var continuator = new Stratum.StratumContinuator(pumper.WriteAsync);
+            var notificator = new Stratum.NotificationSystem();
             pumper.GottaLine += (src, ev) =>
             {
                 var stuff = Newtonsoft.Json.JsonConvert.DeserializeObject<JsonRpc.Message>(ev.payload);
                 if (stuff.id.HasValue) continuator.MangleReply(stuff.id.Value, stuff.rawRes, stuff.rawErr);
-                else if (stuff.method != null)
-                { // native notification
-                    throw new System.NotImplementedException();
+                else if (stuff.method != null) {
+                    if (false == notificator.Mangle(stuff.method, stuff.evargs))
+                    {
+                        // TODO: log this
+                    }
                 }
                 else
                 {
