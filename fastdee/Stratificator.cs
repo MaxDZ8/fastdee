@@ -56,10 +56,22 @@ namespace fastdee
             // Nothing will come before I send anything.
             using var pumper = new SocketPipelinesLineChannel(socket);
             using var continuator = new Stratum.StratumContinuator(pumper.WriteAsync);
-            pumper.GottaLine += (src, ev) => continuator.MangleLine(ev.payload);
+            pumper.GottaLine += (src, ev) =>
+            {
+                var stuff = Newtonsoft.Json.JsonConvert.DeserializeObject<JsonRpc.Message>(ev.payload);
+                if (stuff.id.HasValue) continuator.MangleLine(stuff.id.Value, stuff.rawRes, stuff.rawErr);
+                else if (stuff.method != null)
+                { // native notification
+                    throw new System.NotImplementedException();
+                }
+                else
+                {
+                    // Just drop it. Should I be logging? Giving up? Closing?
+                }
+            };
 
             lock (delicate) delicate.state = StratumState.Subscribing;
-            await continuator.Subscribe(presentingAs);
+            var subscribed = await continuator.Subscribe(presentingAs);
             lock (delicate)
             {
                 delicate.state = StratumState.Authorizing;

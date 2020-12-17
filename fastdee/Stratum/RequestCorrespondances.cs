@@ -69,16 +69,16 @@ namespace fastdee.Stratum
             return (send, track.Task);
         }
 
-        internal bool Trigger(JsonRpc.Response gotcha)
+        internal bool Trigger(ulong id, object? result, object? error)
         {
-            var subject = GetAndForget(gotcha.id);
+            var subject = GetAndForget(id);
             if (null == subject) return false;
-            if (null != gotcha.rawRes) subject.Success(gotcha.rawRes);
-            else if (null != gotcha.rawErr)
+            if (null != result) subject.Success(result);
+            else if (null != error)
             {
                 subject.Failure(new JsonRpc.FailedMethodException()
                 {
-                    payload = gotcha.rawErr
+                    payload = error
                 });
             }
             else throw new NotImplementedException(); // ???

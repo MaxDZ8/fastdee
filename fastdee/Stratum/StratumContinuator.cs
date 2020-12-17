@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 namespace fastdee.Stratum
 {
     /// <summary>
-    /// Provide a way to trigger responses: <see cref="MangleLine(string)"/>.
+    /// Provide a way to trigger responses: <see cref="MangleLine(ulong, object?, object?)"/>.
     /// </summary>
     class StratumContinuator : IRequestContinuator, IDisposable
     {
@@ -44,11 +44,7 @@ namespace fastdee.Stratum
         /// <summary>
         /// Attempts to guess if this is a request we understand and forward it to the right parser, awakening the sleeping process.
         /// </summary>
-        internal bool MangleLine(string line)
-        {
-            var uglee = JsonConvert.DeserializeObject<JsonRpc.Response>(line);
-            return matcher.Trigger(uglee);
-        }
+        internal bool MangleLine(ulong id, object? result, object? error) => matcher.Trigger(id, result, error);
 
         public void Dispose()
         {
