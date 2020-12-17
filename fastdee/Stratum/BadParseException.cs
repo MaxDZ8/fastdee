@@ -8,5 +8,6 @@ namespace fastdee.Stratum
 {
     public class BadParseException : ApplicationException
     {
+        public BadParseException(string? message) : base(message) { }
     }
 }

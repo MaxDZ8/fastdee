@@ -10,9 +10,9 @@
     {
         public readonly string sessionId;
         public readonly byte[] extraNonceOne;
-        public readonly int extraNonceTwoByteCount;
+        public readonly ushort extraNonceTwoByteCount;
 
-        public MiningSubscribe(string sessionId, byte[] extraNonceOne, int extraNonceTwoByteCount)
+        public MiningSubscribe(string sessionId, byte[] extraNonceOne, ushort extraNonceTwoByteCount)
         {
             this.sessionId = sessionId;
             this.extraNonceOne = extraNonceOne;
