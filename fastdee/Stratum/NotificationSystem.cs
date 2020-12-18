@@ -4,10 +4,29 @@ namespace fastdee.Stratum
 {
     public class NotificationSystem : IDisposable
     {
-
-        public bool Mangle(string method, object? evargs)
+        public class NewJobReceivedEventArgs : EventArgs
         {
-            throw new NotImplementedException();
+            public readonly Notification.NewJob newJob;
+            public NewJobReceivedEventArgs(Notification.NewJob newJob) { this.newJob = newJob; }
+        }
+        public event EventHandler<NewJobReceivedEventArgs>? NewJobReceived;
+        protected virtual void OnNewJobReceived(NewJobReceivedEventArgs args) => NewJobReceived?.Invoke(this, args);
+
+
+
+        public bool Mangle(string method, object? evargs) => method.Trim() switch
+        {
+            "mining.notify" => MangleMiningNotify(evargs),
+            null => throw new MissingRequiredException("notifications must have a method string"),
+            "" => throw new MissingRequiredException("notifications must have non-empty method string"),
+            _ => false
+        };
+
+        public bool MangleMiningNotify(object? evargs)
+        {
+            var res = NotificationParser.MiningNotify(evargs);
+            OnNewJobReceived(new NewJobReceivedEventArgs(res));
+            return true;
         }
 
         #region IDisposable support

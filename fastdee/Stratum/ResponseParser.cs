@@ -32,7 +32,7 @@ namespace fastdee.Stratum
             }
             var extra1str = arr[1].Value<string>().Trim();
             if (extra1str.Length == 0) throw new MissingRequiredException("mining.subscribe: extraNonce1 is an empty string");
-            var extraNonce1 = DecodeHex(extra1str);
+            var extraNonce1 = HexHelp.DecodeHex(extra1str);
             if (arr[2].Type != JTokenType.Integer) throw new BadParseException("mining.subscribe: result[2] must be an integral number");
             var nonce2sz = arr[2].Value<long>();
             if (nonce2sz != 4) throw new BadParseException("mining.subscribe: for the time being, nonce2sz must be 4");
@@ -45,25 +45,6 @@ namespace fastdee.Stratum
             if (null == result) throw new MissingRequiredException("mining.authorize: outcome missing");
             if (result is bool real) return real;
             throw new BadParseException("mining.authorize: authorization must be true/false");
-        }
-
-        static byte[] DecodeHex(string hex)
-        {
-            if (hex.Length == 0) throw new BadParseException("Hexadecimal strings cannot be empty");
-            if (hex.Length % 2 != 0) throw new BadParseException("Hexadecimal strings must have even digit count");
-            hex = hex.ToLowerInvariant();
-            var blobby = new byte[hex.Length / 2];
-            for (var loop = 0; loop < hex.Length; loop += 2) blobby[loop / 2] = HexValue(hex[loop + 0], hex[loop + 1]);
-            return blobby;
-        }
-
-        static byte HexValue(char hi, char lo) => (byte)((HexValue(hi) << 4) | HexValue(lo));
-
-        static byte HexValue(char digit)
-        {
-            if (digit >= '0' && digit <= '9') return (byte)(     digit - '0');
-            if (digit >= 'a' && digit <= 'f') return (byte)(10 + digit - 'a');
-            throw new BadParseException("Invalid character in hex digit");
         }
     }
 }
