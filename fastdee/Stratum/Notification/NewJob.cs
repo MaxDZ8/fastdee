@@ -12,15 +12,21 @@ namespace fastdee.Stratum.Notification
         public readonly List<byte> coinbaseInitial = new List<byte>();
         public readonly List<byte> coinbaseFinal = new List<byte>();
         public readonly List<Mining.MerkleRoot> merkles = new List<Mining.MerkleRoot>();
-        public readonly uint blockVer;
+
+        /// <summary>
+        /// For some reason, M8M used this as an uint.
+        /// It really isn't the case, everything about stratum is blind concatenation of strings.
+        /// I don't concatenate the hex strings, I prefer to concatenate the binary values directly.
+        /// </summary>
+        public readonly byte[] blockVer;
         /// <summary>
         /// Aka 'nbits'.
         /// </summary>
-        public readonly uint networkDiff;
-        public readonly uint ntime;
+        public readonly byte[] networkDiff;
+        public readonly byte[] ntime;
         public readonly bool flush;
 
-        public NewJob(string jobid, uint blockVer, uint networkDiff, uint ntime, bool flush)
+        public NewJob(string jobid, byte[] blockVer, byte[] networkDiff, byte[] ntime, bool flush)
         {
             this.jobid = jobid;
             this.blockVer = blockVer;

@@ -16,12 +16,12 @@ namespace fastdee.Stratum
             var coinbaseFirst = concrete[2].Value<string>();
             var coinBaseSecond = concrete[3].Value<string>();
             var merkles = concrete[4] as JArray ?? throw new BadParseException("mining.notify: merkles must be an array");
-            var verHexstr = concrete[5].Value<string>();
-            var nbits = concrete[6].Value<string>();
-            var ntime = concrete[7].Value<string>();
+            var version = HexHelp.DecodeHex(concrete[5].Value<string>());
+            var nbits = HexHelp.DecodeHex(concrete[6].Value<string>());
+            var ntime = HexHelp.DecodeHex(concrete[7].Value<string>());
             var flush = concrete[8].Value<bool>();
 
-            var res = new Notification.NewJob(jobid, AsUint(verHexstr), AsUint(nbits), AsUint(ntime), flush);
+            var res = new Notification.NewJob(jobid, version, nbits, ntime, flush);
             res.coinbaseInitial.AddRange(HexHelp.DecodeHex(coinbaseFirst));
             res.coinbaseFinal.AddRange(HexHelp.DecodeHex(coinBaseSecond));
             HexHelp.DecodeInto(res.prevBlock.blob, prevHashHexstr);
@@ -42,7 +42,5 @@ namespace fastdee.Stratum
             HexHelp.DecodeInto(res.blob, hex);
             return res;
         }
-
-        static uint AsUint(string hex) => HexHelp.AsUint(hex);
     }
 }
