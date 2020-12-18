@@ -26,7 +26,8 @@ namespace fastdee
                 poolport = ushort.Parse(parts[1]);
             }
             var presentingAs = options.SubscribeAs ?? MyCanonicalSubscription();
-            new Stratificator(poolurl, poolport).PumpForeverAsync(presentingAs).Wait(); // TODO: the other services
+            var serverInfo = new ServerConnectionInfo(poolurl, poolport, presentingAs, options.UserName, options.WorkerName, options.SillyPassword);
+            new Stratificator(serverInfo).PumpForeverAsync().Wait(); // TODO: the other services
             return -2;
         }
 

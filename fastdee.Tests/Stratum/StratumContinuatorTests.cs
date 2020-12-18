@@ -5,24 +5,8 @@ namespace fastdee.Stratum.Tests
 {
     public class StratumContinuatorTests
     {
-        [Fact]
-        public async Task CanAuthorizeImplicitly()
-        {
-            // It completes even without no pumping at all.
-            string sent = "";
-            var uut = new StratumContinuator(str =>
-            {
-                sent = str;
-                return Task.CompletedTask;
-            });
-            var pending = uut.Authorize("username", "workeruniq", "wannabePass");
-            await Task.WhenAll(pending.task, Task.Run(async () =>
-            {
-                await Task.Delay(1);
-                pending.trigger(true);
-            }));
-            Assert.True(pending.task.IsCompleted);
-            Assert.True(pending.task.Result);
-        }
+        // Implicit auth is gone.
+        // It turns out I can't quite test this now as there's no seam support and no info at all
+        // to trigger the requests (id is kept private)
     }
 }

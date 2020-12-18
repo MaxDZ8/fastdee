@@ -11,8 +11,7 @@ namespace fastdee
     /// </summary>
     class Stratificator
     {
-        readonly string poolurl;
-        readonly ushort port;
+        readonly ServerConnectionInfo serverInfo;
         readonly ThreadShared delicate = new ThreadShared();
 
         class ThreadShared
@@ -21,19 +20,18 @@ namespace fastdee
             public bool alive;
         }
 
-        internal Stratificator(string poolurl, ushort port)
+        internal Stratificator(ServerConnectionInfo serverInfo)
         {
-            this.poolurl = poolurl;
-            this.port = port;
+            this.serverInfo = serverInfo;
         }
 
-        internal async Task PumpForeverAsync(string presentingAs)
+        internal async Task PumpForeverAsync()
         {
             while (true)
             {
                 try
                 {
-                    await PumpConnectionAsync(presentingAs);
+                    await PumpConnectionAsync();
                 }
                 catch
                 {
@@ -45,10 +43,10 @@ namespace fastdee
             }
         }
 
-        async Task PumpConnectionAsync(string presentingAs)
+        async Task PumpConnectionAsync()
         {
-            var addr = Dns.GetHostAddresses(poolurl)[0];
-            var endpoint = new IPEndPoint(addr, port);
+            var addr = Dns.GetHostAddresses(serverInfo.poolurl)[0];
+            var endpoint = new IPEndPoint(addr, serverInfo.poolport);
             using var socket = new Socket(endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             lock (delicate) delicate.state = StratumState.Connecting;
             await socket.ConnectAsync(endpoint);
@@ -74,13 +72,16 @@ namespace fastdee
             };
 
             lock (delicate) delicate.state = StratumState.Subscribing;
-            var subscribed = await continuator.SubscribeAsync(presentingAs);
+            var subscribed = await continuator.SubscribeAsync(serverInfo.presentingAs);
             lock (delicate)
             {
                 delicate.state = StratumState.Authorizing;
                 delicate.alive = true;
             }
-            throw new System.NotImplementedException();
+            var authorized = await continuator.AuthorizeAsync(serverInfo.userName, serverInfo.workerName, serverInfo.sillyPassword);
+            if (false == authorized) throw new BadStratumAuthException();
+            System.Console.WriteLine("OK Authorized");
+            await Task.Delay(-1); // can I do anything more useful with it?
         }
 
         public StratumState Status

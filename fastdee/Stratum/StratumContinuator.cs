@@ -22,14 +22,13 @@ namespace fastdee.Stratum
             return req.task;
         }
 
-        public PendingAuth Authorize(string user, string worker, string sillyPass)
+        public Task<bool> AuthorizeAsync(string user, string worker, string sillyPass)
         {
             var login = $"{user}.{worker}";
             var args = new string[] { login, sillyPass };
             var req = matcher.Request("mining.authorize", args, result => ResponseParser.MiningAuthorize(result));
-            void ImplicitOutcome(bool uglee) => matcher.Trigger(req.request.id, uglee, null);
             WrappedSend(req.request);
-            return new PendingAuth(req.task, ImplicitOutcome);
+            return req.task;
         }
 
         void WrappedSend(object gizmo)
