@@ -9,8 +9,8 @@ namespace fastdee.Stratum.Notification
     {
         public readonly string jobid;
         public readonly Mining.BlockHash prevBlock = new Mining.BlockHash();
-        public readonly List<byte> coinbaseInitial = new List<byte>();
-        public readonly List<byte> coinbaseFinal = new List<byte>();
+        public readonly byte[] cbHead;
+        public readonly byte[] cbTail;
         public readonly List<Mining.MerkleRoot> merkles = new List<Mining.MerkleRoot>();
 
         /// <summary>
@@ -26,10 +26,12 @@ namespace fastdee.Stratum.Notification
         public readonly byte[] ntime;
         public readonly bool flush;
 
-        public NewJob(string jobid, byte[] blockVer, byte[] networkDiff, byte[] ntime, bool flush)
+        public NewJob(string jobid, byte[] blockVer, byte[] cbHead, byte[] cbTail, byte[] networkDiff, byte[] ntime, bool flush)
         {
             this.jobid = jobid;
             this.blockVer = blockVer;
+            this.cbHead = cbHead;
+            this.cbTail = cbTail;
             this.networkDiff = networkDiff;
             this.ntime = ntime;
             this.flush = flush;

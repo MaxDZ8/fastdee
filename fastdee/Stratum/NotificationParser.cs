@@ -21,9 +21,9 @@ namespace fastdee.Stratum
             var ntime = HexHelp.DecodeHex(concrete[7].Value<string>());
             var flush = concrete[8].Value<bool>();
 
-            var res = new Notification.NewJob(jobid, version, nbits, ntime, flush);
-            res.coinbaseInitial.AddRange(HexHelp.DecodeHex(coinbaseFirst));
-            res.coinbaseFinal.AddRange(HexHelp.DecodeHex(coinBaseSecond));
+            var cbFirst = HexHelp.DecodeHex(coinbaseFirst);
+            var cbTail = HexHelp.DecodeHex(coinBaseSecond);
+            var res = new Notification.NewJob(jobid, version, cbFirst, cbTail, nbits, ntime, flush);
             HexHelp.DecodeInto(res.prevBlock.blob, prevHashHexstr);
             var decodedMerkles = merkles.Select(el => AsMerkle(el));
             res.merkles.AddRange(decodedMerkles);
