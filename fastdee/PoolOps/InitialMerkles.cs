@@ -13,7 +13,9 @@ namespace fastdee.PoolOps
         /// </summary>
         static public Mining.MerkleRoot Canonical(byte[] coinbase)
         {
-            throw new NotImplementedException();
+            var res = new Mining.MerkleRoot();
+            System.Security.Cryptography.SHA256.TryHashData(coinbase, res.blob, out var written);
+            return res;
         }
 
         /// <summary>
