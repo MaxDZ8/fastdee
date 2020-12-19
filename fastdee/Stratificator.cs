@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
@@ -22,6 +23,10 @@ namespace fastdee
             /// I want to keep it easy there so I instantiate something right away.
             /// </summary>
             public IExtraNonce2Provider nonce2 = new PoolOps.CanonicalNonce2Roller();
+
+            public string jobid = "";
+            public PoolOps.CoinbaseGenerator coinbaseMaker = new PoolOps.CoinbaseGenerator(Array.Empty<byte>(), 0);
+            public byte[] coinbaseTemplate = Array.Empty<byte>();
         }
 
         internal Stratificator(ServerConnectionInfo serverInfo)
@@ -59,6 +64,7 @@ namespace fastdee
             using var pumper = new SocketPipelinesLineChannel(socket);
             using var continuator = new Stratum.StratumContinuator(pumper.WriteAsync);
             var notificator = new Stratum.NotificationSystem();
+            notificator.NewJobReceived += NewJobReceived;
             pumper.GottaLine += (src, ev) =>
             {
                 var stuff = Newtonsoft.Json.JsonConvert.DeserializeObject<JsonRpc.Message>(ev.payload);
@@ -85,8 +91,28 @@ namespace fastdee
             }
             var authorized = await continuator.AuthorizeAsync(serverInfo.userName, serverInfo.workerName, serverInfo.sillyPassword);
             if (false == authorized) throw new BadStratumAuthException();
-            System.Console.WriteLine("OK Authorized");
+            Console.WriteLine("OK Authorized");
             await Task.Delay(-1); // can I do anything more useful with it?
+        }
+
+        private void NewJobReceived(object? sender, Stratum.NotificationSystem.NewJobReceivedEventArgs e)
+        {
+            Console.WriteLine($"OK Job={e.newJob.jobid}, flushing={e.newJob.flush}");
+            lock (delicate)
+            {
+                if (e.newJob.flush) delicate.nonce2.Reset();
+                delicate.coinbaseTemplate = delicate.coinbaseMaker.MakeCoinbaseTemplate(e.newJob.cbHead, e.newJob.cbTail);
+                StampNonce2();
+                throw new NotImplementedException();
+            }
+        }
+
+        void StampNonce2()
+        {
+            var nonce2Off = delicate.coinbaseMaker.Nonce2Off;
+            var nonce2sz = delicate.coinbaseMaker.Nonce2Bytes;
+            delicate.nonce2.CopyIntoBuffer(new Span<byte>(delicate.coinbaseTemplate, nonce2Off, nonce2sz));
+            delicate.nonce2.Consumed();
         }
 
         public StratumState Status
@@ -114,11 +140,12 @@ namespace fastdee
         /// <param name="subscribed"></param>
         void IntantiateOperations(Stratum.Response.MiningSubscribe subscribed)
         {
-            if (subscribed.extraNonceTwoByteCount != 4) throw new System.NotImplementedException("only supported nonce2 size is 4");
+            if (subscribed.extraNonceTwoByteCount != 4) throw new NotImplementedException("only supported nonce2 size is 4");
             lock (delicate)
             {
                 // For the time being, assume this is good enough. There are algorithms complicating the thing but I don't want to support them... for now.
                 delicate.nonce2 = new PoolOps.CanonicalNonce2Roller();
+                delicate.coinbaseMaker = new PoolOps.CoinbaseGenerator(subscribed.extraNonceOne, subscribed.extraNonceTwoByteCount);
             }
         }
     }
