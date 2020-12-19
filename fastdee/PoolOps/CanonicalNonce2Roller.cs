@@ -12,23 +12,22 @@ namespace fastdee.PoolOps
     /// </summary>
     public class CanonicalNonce2Roller : IExtraNonce2Provider
     {
-        public int ByteCount => throw new NotImplementedException();
+        uint nonce2;
 
-        public ulong NativeValue => throw new NotImplementedException();
+        public int ByteCount => 4;
 
-        public void Consumed()
+        public ulong NativeValue => nonce2;
+
+        public void Consumed() => nonce2++;
+
+        public void CopyIntoBuffer(Span<byte> slice)
         {
-            throw new NotImplementedException();
+            slice[3] = (byte)(nonce2 >> 24);
+            slice[2] = (byte)(nonce2 >> 16);
+            slice[1] = (byte)(nonce2 >>  8);
+            slice[0] = (byte)nonce2;
         }
 
-        public void CopyIntoBuffer(Span<byte> coinbaseSlice)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Reset()
-        {
-            throw new NotImplementedException();
-        }
+        public void Reset() => nonce2 = 0;
     }
 }
