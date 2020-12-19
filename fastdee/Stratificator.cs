@@ -18,6 +18,10 @@ namespace fastdee
         {
             public StratumState state;
             public bool alive;
+            /// <summary>
+            /// I want to keep it easy there so I instantiate something right away.
+            /// </summary>
+            public IExtraNonce2Provider nonce2 = new PoolOps.CanonicalNonce2Roller();
         }
 
         internal Stratificator(ServerConnectionInfo serverInfo)
@@ -73,6 +77,7 @@ namespace fastdee
 
             lock (delicate) delicate.state = StratumState.Subscribing;
             var subscribed = await continuator.SubscribeAsync(serverInfo.presentingAs);
+            IntantiateOperations(subscribed);
             lock (delicate)
             {
                 delicate.state = StratumState.Authorizing;
@@ -99,6 +104,21 @@ namespace fastdee
             get
             {
                 lock (delicate) return delicate.alive;
+            }
+        }
+
+        /// <summary>
+        /// In theory there is no need to re-instantiate this at each connection, servers are unlikely to change their mind on the fly...
+        /// ... but who says the server didn't go down for an upgrade and changed its mind?
+        /// </summary>
+        /// <param name="subscribed"></param>
+        void IntantiateOperations(Stratum.Response.MiningSubscribe subscribed)
+        {
+            if (subscribed.extraNonceTwoByteCount != 4) throw new System.NotImplementedException("only supported nonce2 size is 4");
+            lock (delicate)
+            {
+                // For the time being, assume this is good enough. There are algorithms complicating the thing but I don't want to support them... for now.
+                delicate.nonce2 = new PoolOps.CanonicalNonce2Roller();
             }
         }
     }
