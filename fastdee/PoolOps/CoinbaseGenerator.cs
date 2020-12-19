@@ -17,6 +17,7 @@ namespace fastdee.PoolOps
         {
             this.extraNonce1 = extraNonce1;
             this.nonce2sz = nonce2sz;
+            Nonce2Off = ExtraNonce1Bytes;
         }
 
         public int ExtraNonce1Bytes => extraNonce1.Length;
@@ -29,9 +30,15 @@ namespace fastdee.PoolOps
         /// <remarks>
         /// Also keeps track of coinbase1 length so I can give you the offset right away.
         /// </remarks>
-        public byte[] MakeCoinbaseTemplate(byte[] cbfirst, byte[] cbfinal)
+        public byte[] MakeCoinbaseTemplate(byte[] cbHead, byte[] cbTail)
         {
-            throw new NotImplementedException();
+            Nonce2Off = cbHead.Length + extraNonce1.Length;
+            var taking = Nonce2Off + nonce2sz + cbTail.Length;
+            var res = new byte[taking]; // yeah you can do magic with Concat and stuff but cmon
+            Array.Copy(cbHead, 0, res, 0, cbHead.Length);
+            Array.Copy(extraNonce1, 0, res, cbHead.Length, extraNonce1.Length);
+            Array.Copy(cbTail, 0, res, Nonce2Off + nonce2sz, cbTail.Length);
+            return res;
         }
     }
 }
