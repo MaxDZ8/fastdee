@@ -39,5 +39,11 @@ namespace fastdee
         /// want a new nonce2 to be used by calling this.
         /// </summary>
         void Consumed();
+
+        /// <summary>
+        /// Set <see cref="NativeValue"/>. Provided by call because this is mostly for testing results, not meant to be truly used.
+        /// </summary>
+        /// <param name="nonce2"></param>
+        public void NextNonce(ulong nonce2);
     }
 }

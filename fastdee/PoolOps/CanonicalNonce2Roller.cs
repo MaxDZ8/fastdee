@@ -29,5 +29,11 @@ namespace fastdee.PoolOps
         }
 
         public void Reset() => nonce2 = 0;
+
+        public void NextNonce(ulong nonce2)
+        {
+            if (nonce2 > uint.MaxValue) throw new ArgumentOutOfRangeException(nameof(nonce2));
+            this.nonce2 = (uint)nonce2;
+        }
     }
 }
