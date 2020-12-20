@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 namespace fastdee.PoolOps
 {
@@ -26,6 +27,23 @@ namespace fastdee.PoolOps
         static public Mining.MerkleRoot UselesslyComplicated(byte[] coinbase)
         {
             throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Here for the lack of a better idea.
+        /// </summary>
+        static public byte[] DoubleSha(byte[] blob)
+        {
+            var hash = System.Security.Cryptography.SHA256.HashData(blob);
+            return System.Security.Cryptography.SHA256.HashData(hash);
+        }
+        static public Mining.MerkleRoot BlendMerkle(byte[] root, byte[] merkle)
+        {
+            var longer = root.Concat(merkle).ToArray();
+            var hash = System.Security.Cryptography.SHA256.HashData(longer);
+            var res = new Mining.MerkleRoot();
+            System.Security.Cryptography.SHA256.TryHashData(hash, res.blob, out var _);
+            return res;
         }
     }
 }
