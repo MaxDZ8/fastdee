@@ -6,7 +6,7 @@ namespace fastdee.PoolOps
     /// Contains the various functions used to generate the initial merkle root.
     /// I know about two for the time being.
     /// </summary>
-    public static class InitialMerkles
+    public static class Merkles
     {
         /// <summary>
         /// Used by most algorithms. It's a simple sha256 of the coinbase. Can't get any simpler than that.

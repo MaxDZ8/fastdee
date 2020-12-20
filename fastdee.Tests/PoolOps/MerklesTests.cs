@@ -4,9 +4,9 @@ using fastdee.PoolOps;
 namespace fastdee.Tests.PoolOps
 {
     /// <summary>
-    /// Only <see cref="InitialMerkles.Canonical(byte[])"/> is supported for now.
+    /// Only <see cref="Merkles.Canonical(byte[])"/> is supported for now.
     /// </summary>
-    public class InitialMerklesTests
+    public class MerklesTests
     {
         [Theory]
         [InlineData(new byte[] {
@@ -59,7 +59,7 @@ namespace fastdee.Tests.PoolOps
         })]
         public void CanonicalMatchesGolden(byte[] observedCoinbase, byte[] expectedRoot)
         {
-            var calc = InitialMerkles.Canonical(observedCoinbase);
+            var calc = Merkles.Canonical(observedCoinbase);
             Assert.Equal(expectedRoot, calc.blob);
         }
     }
