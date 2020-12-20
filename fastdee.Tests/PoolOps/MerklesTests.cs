@@ -77,8 +77,12 @@ namespace fastdee.Tests.PoolOps
             })]
         public void BlendingMatchesGolden(byte[] root, byte[] merkle, byte[] expected)
         {
-            var calc = Merkles.BlendMerkle(root, merkle);
-            Assert.Equal(calc.blob, expected);
+            var mroot = new Mining.Merkle();
+            var mmerk = new Mining.Merkle[1] { new Mining.Merkle() };
+            for (var loop = 0; loop < mroot.blob.Length; loop++) mroot.blob[loop] = root[loop];
+            for (var loop = 0; loop < mmerk[0].blob.Length; loop++) mmerk[0].blob[loop] = merkle[loop];
+            var calc = Merkles.BlendMerkles(mroot, mmerk);
+            Assert.Equal(calc, expected);
         }
     }
 }

@@ -18,5 +18,8 @@ namespace fastdee
 
         [Option('f', "fakeVersion", Required = false, HelpText = "Want to mess with the server? Specify your preferred program version to the server!")]
         public string? SubscribeAs { get; set; }
+
+        [Option('a', "algorithm", Required = true, HelpText = "Algorithm to be expected at the pool.")]
+        public string Algorithm { get; set; } = "";
     }
 }

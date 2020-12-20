@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace fastdee.PoolOps
@@ -37,13 +38,29 @@ namespace fastdee.PoolOps
             var hash = System.Security.Cryptography.SHA256.HashData(blob);
             return System.Security.Cryptography.SHA256.HashData(hash);
         }
-        static public Mining.MerkleRoot BlendMerkle(byte[] root, byte[] merkle)
+
+        /// <summary>
+        /// For the time being, this is in fact always the same thing.
+        /// </summary>
+        /// <param name="root"></param>
+        /// <param name="jobby"></param>
+        /// <returns></returns>
+        public static byte[] BlendMerkles(Mining.Merkle root, IReadOnlyList<Mining.Merkle> jobby)
         {
-            var longer = root.Concat(merkle).ToArray();
+            Span<byte> merkleSha = stackalloc byte[32];
+            for (var cp = 0; cp < 32; cp++) merkleSha[cp] = root.blob[cp];
+            foreach (var el in jobby)
+            {
+                for (var cp = 0; cp < 32; cp++) merkleSha[cp + 32] = el.blob[cp];
+                BlendMerklePackedInto(merkleSha[0..31], merkleSha);
+            }
+            return merkleSha[0..31].ToArray();
+        }
+
+        static void BlendMerklePackedInto(Span<byte> result, ReadOnlySpan<byte> longer)
+        {
             var hash = System.Security.Cryptography.SHA256.HashData(longer);
-            var res = new Mining.MerkleRoot();
-            System.Security.Cryptography.SHA256.TryHashData(hash, res.blob, out var _);
-            return res;
+            System.Security.Cryptography.SHA256.TryHashData(hash, result, out var _);
         }
     }
 }

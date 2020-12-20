@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -15,6 +16,8 @@ namespace fastdee
         readonly ServerConnectionInfo serverInfo;
         readonly ThreadShared delicate = new ThreadShared();
 
+        readonly WorkInfo.FromCoinbaseFunc makeMerkleRoot;
+
         class ThreadShared
         {
             public StratumState state;
@@ -24,14 +27,13 @@ namespace fastdee
             /// </summary>
             public IExtraNonce2Provider nonce2 = new PoolOps.CanonicalNonce2Roller();
 
-            public string jobid = "";
-            public PoolOps.CoinbaseGenerator coinbaseMaker = new PoolOps.CoinbaseGenerator(Array.Empty<byte>(), 0);
-            public byte[] coinbaseTemplate = Array.Empty<byte>();
+            public readonly WorkInfo work = new WorkInfo();
         }
 
-        internal Stratificator(ServerConnectionInfo serverInfo)
+        internal Stratificator(ServerConnectionInfo serverInfo, WorkInfo.FromCoinbaseFunc makeMerkleRoot)
         {
             this.serverInfo = serverInfo;
+            this.makeMerkleRoot = makeMerkleRoot;
         }
 
         internal async Task PumpForeverAsync()
@@ -101,18 +103,8 @@ namespace fastdee
             lock (delicate)
             {
                 if (e.newJob.flush) delicate.nonce2.Reset();
-                delicate.coinbaseTemplate = delicate.coinbaseMaker.MakeCoinbaseTemplate(e.newJob.cbHead, e.newJob.cbTail);
-                StampNonce2();
-                throw new NotImplementedException();
+                delicate.work.NewJob(e.newJob, delicate.nonce2, makeMerkleRoot);
             }
-        }
-
-        void StampNonce2()
-        {
-            var nonce2Off = delicate.coinbaseMaker.Nonce2Off;
-            var nonce2sz = delicate.coinbaseMaker.Nonce2Bytes;
-            delicate.nonce2.CopyIntoBuffer(new Span<byte>(delicate.coinbaseTemplate, nonce2Off, nonce2sz));
-            delicate.nonce2.Consumed();
         }
 
         public StratumState Status
@@ -145,7 +137,7 @@ namespace fastdee
             {
                 // For the time being, assume this is good enough. There are algorithms complicating the thing but I don't want to support them... for now.
                 delicate.nonce2 = new PoolOps.CanonicalNonce2Roller();
-                delicate.coinbaseMaker = new PoolOps.CoinbaseGenerator(subscribed.extraNonceOne, subscribed.extraNonceTwoByteCount);
+                delicate.work.NonceSettings(subscribed.extraNonceOne, subscribed.extraNonceTwoByteCount);
             }
         }
     }

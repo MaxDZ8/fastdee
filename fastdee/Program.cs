@@ -27,7 +27,13 @@ namespace fastdee
             }
             var presentingAs = options.SubscribeAs ?? MyCanonicalSubscription();
             var serverInfo = new ServerConnectionInfo(poolurl, poolport, presentingAs, options.UserName, options.WorkerName, options.SillyPassword);
-            new Stratificator(serverInfo).PumpForeverAsync().Wait(); // TODO: the other services
+            var merkleGenerator = ChooseMerkleGenerator(options.Algorithm);
+            if (null == merkleGenerator)
+            {
+                Console.Error.WriteLine($"Unsupported algorithm: {options.Algorithm}");
+                return -3;
+            }
+            new Stratificator(serverInfo, merkleGenerator).PumpForeverAsync().Wait(); // TODO: the other services
             return -2;
         }
 
@@ -42,6 +48,19 @@ namespace fastdee
             var minor = (uint)version.Minor;
             var patch = (uint)version.Build;
             return $"fastdee/{major}.{minor}.{patch}";
+        }
+
+        static WorkInfo.FromCoinbaseFunc? ChooseMerkleGenerator(string algo) => algo.ToLowerInvariant() switch
+        {
+            "keccak" => (coinbase) => AsMerkle(PoolOps.Merkles.DoubleSha(coinbase)),
+            _ => null
+        };
+
+        static Mining.Merkle AsMerkle(byte[] blob)
+        {
+            var wrap = new Mining.Merkle();
+            Array.Copy(blob, wrap.blob, wrap.blob.Length);
+            return wrap;
         }
     }
 }
