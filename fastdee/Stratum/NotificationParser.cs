@@ -30,15 +30,15 @@ namespace fastdee.Stratum
             return res;
         }
 
-        static Mining.MerkleRoot AsMerkle(JToken maybe)
+        static Mining.Merkle AsMerkle(JToken maybe)
         {
             if (maybe.Type != JTokenType.String) throw new BadParseException("mining.notify: merkles must be strings");
             return AsMerkle(maybe.Value<string>());
         }
 
-        static Mining.MerkleRoot AsMerkle(string hex)
+        static Mining.Merkle AsMerkle(string hex)
         {
-            var res = new Mining.MerkleRoot();
+            var res = new Mining.Merkle();
             HexHelp.DecodeInto(res.blob, hex);
             return res;
         }

@@ -11,7 +11,7 @@ namespace fastdee.Stratum.Notification
         public readonly Mining.BlockHash prevBlock = new Mining.BlockHash();
         public readonly byte[] cbHead;
         public readonly byte[] cbTail;
-        public readonly List<Mining.MerkleRoot> merkles = new List<Mining.MerkleRoot>();
+        public readonly List<Mining.Merkle> merkles = new List<Mining.Merkle>();
 
         /// <summary>
         /// For some reason, M8M used this as an uint.

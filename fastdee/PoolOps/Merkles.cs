@@ -12,9 +12,9 @@ namespace fastdee.PoolOps
         /// <summary>
         /// Used by most algorithms. It's a simple sha256 of the coinbase. Can't get any simpler than that.
         /// </summary>
-        static public Mining.MerkleRoot Canonical(byte[] coinbase)
+        static public Mining.Merkle Canonical(byte[] coinbase)
         {
-            var res = new Mining.MerkleRoot();
+            var res = new Mining.Merkle();
             System.Security.Cryptography.SHA256.TryHashData(coinbase, res.blob, out var written);
             return res;
         }
@@ -24,7 +24,7 @@ namespace fastdee.PoolOps
         /// </summary>
         /// <param name="coinbase"></param>
         /// <returns></returns>
-        static public Mining.MerkleRoot UselesslyComplicated(byte[] coinbase)
+        static public Mining.Merkle UselesslyComplicated(byte[] coinbase)
         {
             throw new NotImplementedException();
         }

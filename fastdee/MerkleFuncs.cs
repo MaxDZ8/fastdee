@@ -9,7 +9,7 @@
         /// Given coinbase, generate the first merkle root.
         /// This is the main issue.
         /// </summary>
-        public delegate Mining.MerkleRoot FromCoinbaseFunc(byte[] coinbase);
+        public delegate Mining.Merkle FromCoinbaseFunc(byte[] coinbase);
 
         public readonly FromCoinbaseFunc makeRootFromCoinbase;
 
