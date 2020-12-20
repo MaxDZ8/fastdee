@@ -9,6 +9,10 @@ namespace fastdee.Stratum.Notification
     {
         public readonly string jobid;
         public readonly Mining.BlockHash prevBlock = new Mining.BlockHash();
+        /// <summary>
+        /// IDK what this is, but sgminer has it and it goes into block as well when present...
+        /// </summary>
+        public readonly byte[]? trie;
         public readonly byte[] cbHead;
         public readonly byte[] cbTail;
         public readonly List<Mining.Merkle> merkles = new List<Mining.Merkle>();
@@ -26,10 +30,13 @@ namespace fastdee.Stratum.Notification
         public readonly byte[] ntime;
         public readonly bool flush;
 
-        public NewJob(string jobid, byte[] blockVer, byte[] cbHead, byte[] cbTail, byte[] networkDiff, byte[] ntime, bool flush)
+        public NewJob(string jobid, byte[] blockVer, byte[]? trie,
+                      byte[] cbHead, byte[] cbTail,
+                      byte[] networkDiff, byte[] ntime, bool flush)
         {
             this.jobid = jobid;
             this.blockVer = blockVer;
+            this.trie = trie;
             this.cbHead = cbHead;
             this.cbTail = cbTail;
             this.networkDiff = networkDiff;

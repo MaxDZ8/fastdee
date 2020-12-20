@@ -9,21 +9,29 @@ namespace fastdee.Stratum
         {
             if (null == evargs) throw new MissingRequiredException("mining.notify: no payload given");
             if (evargs is not JArray concrete) throw new MissingRequiredException("mining.notify: payload must be an array");
-            if (concrete.Count != 9) throw new BadParseException("mining.notify: element count mismatch, won't be able to parse");
+            if (concrete.Count != 9 && concrete.Count != 10) throw new BadParseException("mining.notify: element count mismatch, won't be able to parse");
 
-            var jobid = concrete[0].Value<string>();
-            var prevHashHexstr = concrete[1].Value<string>();
-            var coinbaseFirst = concrete[2].Value<string>();
-            var coinBaseSecond = concrete[3].Value<string>();
-            var merkles = concrete[4] as JArray ?? throw new BadParseException("mining.notify: merkles must be an array");
-            var version = HexHelp.DecodeHex(concrete[5].Value<string>());
-            var nbits = HexHelp.DecodeHex(concrete[6].Value<string>());
-            var ntime = HexHelp.DecodeHex(concrete[7].Value<string>());
-            var flush = concrete[8].Value<bool>();
+            var getTrie = concrete.Count == 10;
+            byte[]? trie = null;
+            var index = 0;
+            var jobid = concrete[index++].Value<string>();
+            var prevHashHexstr = concrete[index++].Value<string>();
+            if (getTrie)
+            {
+                var triestr = concrete[index++].Value<string>();
+                trie = HexHelp.DecodeHex(triestr);
+            }
+            var coinbaseFirst = concrete[index++].Value<string>();
+            var coinBaseSecond = concrete[index++].Value<string>();
+            var merkles = concrete[index++] as JArray ?? throw new BadParseException("mining.notify: merkles must be an array");
+            var version = HexHelp.DecodeHex(concrete[index++].Value<string>());
+            var nbits = HexHelp.DecodeHex(concrete[index++].Value<string>());
+            var ntime = HexHelp.DecodeHex(concrete[index++].Value<string>());
+            var flush = concrete[index++].Value<bool>();
 
             var cbFirst = HexHelp.DecodeHex(coinbaseFirst);
             var cbTail = HexHelp.DecodeHex(coinBaseSecond);
-            var res = new Notification.NewJob(jobid, version, cbFirst, cbTail, nbits, ntime, flush);
+            var res = new Notification.NewJob(jobid, version, trie, cbFirst, cbTail, nbits, ntime, flush);
             HexHelp.DecodeInto(res.prevBlock.blob, prevHashHexstr);
             var decodedMerkles = merkles.Select(el => AsMerkle(el));
             res.merkles.AddRange(decodedMerkles);
