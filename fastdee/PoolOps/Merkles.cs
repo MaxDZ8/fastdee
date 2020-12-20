@@ -47,20 +47,20 @@ namespace fastdee.PoolOps
         /// <returns></returns>
         public static byte[] BlendMerkles(Mining.Merkle root, IReadOnlyList<Mining.Merkle> jobby)
         {
-            Span<byte> merkleSha = stackalloc byte[32];
+            Span<byte> merkleSha = stackalloc byte[64];
             for (var cp = 0; cp < 32; cp++) merkleSha[cp] = root.blob[cp];
             foreach (var el in jobby)
             {
                 for (var cp = 0; cp < 32; cp++) merkleSha[cp + 32] = el.blob[cp];
-                BlendMerklePackedInto(merkleSha[0..31], merkleSha);
+                BlendMerklePackedInto(merkleSha);
             }
-            return merkleSha[0..31].ToArray();
+            return merkleSha[0..32].ToArray();
         }
 
-        static void BlendMerklePackedInto(Span<byte> result, ReadOnlySpan<byte> longer)
+        static void BlendMerklePackedInto(Span<byte> io)
         {
-            var hash = System.Security.Cryptography.SHA256.HashData(longer);
-            System.Security.Cryptography.SHA256.TryHashData(hash, result, out var _);
+            var hash = System.Security.Cryptography.SHA256.HashData(io);
+            System.Security.Cryptography.SHA256.TryHashData(hash, io, out var _);
         }
     }
 }
