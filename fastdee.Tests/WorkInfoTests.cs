@@ -71,7 +71,7 @@ namespace fastdee.Tests
             var nroller = new fastdee.PoolOps.CanonicalNonce2Roller();
             nroller.NextNonce(nonce2);
             uut.NonceSettings(n1, n2sz);
-            uut.NewJob(pack, nroller, fastdee.PoolOps.Merkles.Canonical);
+            uut.NewJob(pack, nroller, fastdee.PoolOps.Merkles.SingleSha);
             Assert.Equal(expected, uut.Header.ToArray());
         }
 

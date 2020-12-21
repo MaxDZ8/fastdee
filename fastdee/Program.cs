@@ -1,7 +1,8 @@
 ﻿using System;
 using CommandLine;
-using System.Net.Sockets;
-using System.Net;
+
+using System.Runtime.CompilerServices;
+[assembly: InternalsVisibleTo("fastdee.Tests")]
 
 namespace fastdee
 {
@@ -50,17 +51,10 @@ namespace fastdee
             return $"fastdee/{major}.{minor}.{patch}";
         }
 
-        static WorkInfo.FromCoinbaseFunc? ChooseMerkleGenerator(string algo) => algo.ToLowerInvariant() switch
+        static internal WorkInfo.FromCoinbaseFunc? ChooseMerkleGenerator(string algo) => algo.ToLowerInvariant() switch
         {
-            "keccak" => (coinbase) => AsMerkle(PoolOps.Merkles.DoubleSha(coinbase)),
+            "keccak" => (coinbase) => PoolOps.Merkles.SingleSha(coinbase),
             _ => null
         };
-
-        static Mining.Merkle AsMerkle(byte[] blob)
-        {
-            var wrap = new Mining.Merkle();
-            Array.Copy(blob, wrap.blob, wrap.blob.Length);
-            return wrap;
-        }
     }
 }

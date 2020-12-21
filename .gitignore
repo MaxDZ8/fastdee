@@ -4,3 +4,4 @@ fastdee/bin/
 fastdee.Tests/obj/
 fastdee.Tests/bin/
 fastdee/Properties/launchSettings.json
+/fastdee.Tests/TestResults/bc30bb0a-3b16-4a1e-aa81-b89a5c7d717c/coverage.cobertura.xml

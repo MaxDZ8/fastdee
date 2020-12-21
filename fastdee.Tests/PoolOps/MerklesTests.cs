@@ -4,7 +4,7 @@ using fastdee.PoolOps;
 namespace fastdee.Tests.PoolOps
 {
     /// <summary>
-    /// Only <see cref="Merkles.Canonical(byte[])"/> is supported for now.
+    /// Only <see cref="Merkles.SingleSha(byte[])"/> is supported for now.
     /// </summary>
     public class MerklesTests
     {
@@ -59,7 +59,7 @@ namespace fastdee.Tests.PoolOps
         })]
         public void CanonicalMatchesGolden(byte[] observedCoinbase, byte[] expectedRoot)
         {
-            var calc = Merkles.Canonical(observedCoinbase);
+            var calc = Merkles.SingleSha(observedCoinbase);
             Assert.Equal(expectedRoot, calc.blob);
         }
 
