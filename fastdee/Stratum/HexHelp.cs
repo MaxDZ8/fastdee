@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace fastdee.Stratum
+﻿namespace fastdee.Stratum
 {
     public static class HexHelp
     {
@@ -29,14 +23,6 @@ namespace fastdee.Stratum
             if (digit >= '0' && digit <= '9') return (byte)(digit - '0');
             if (digit >= 'a' && digit <= 'f') return (byte)(10 + digit - 'a');
             throw new BadParseException("Invalid character in hex digit");
-        }
-
-        internal static uint AsUint(string hex)
-        {
-            if (hex.Length != 8) throw new BadParseException("string to be converted to uint must be 8 characters long");
-            var blob = DecodeHex(hex); // todo: avoid allocations for those
-            var magic = blob[0] << 24 | blob[1] << 16 | blob[2] << 8 | blob[3];
-            return (uint)magic;
         }
     }
 }
