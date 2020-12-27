@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+
+    <LangVersion>9.0</LangVersion>
+    <Nullable>enable</Nullable>
+    
+    <Authors>MaxDZ8</Authors>
+    <Company>-</Company>
+    <Product />
+    <Description>Part of the experimental, heterogeneous fast-dispatch ecosystem.
+Fastdee sits between a stratum pool and the workers, isolating them from network complexity so they can focus on being simple.</Description>
+    <PackageProjectUrl>https://github.com/MaxDZ8/fastdee</PackageProjectUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.8.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="5.0.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="System.IO.Pipelines" Version="5.0.1" />
+  </ItemGroup>
+
+</Project>

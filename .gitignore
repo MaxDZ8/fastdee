@@ -1,0 +1,7 @@
+fastdee/obj/
+.vs/
+fastdee/bin/
+fastdee.Tests/obj/
+fastdee.Tests/bin/
+fastdee/Properties/launchSettings.json
+/fastdee.Tests/TestResults/
