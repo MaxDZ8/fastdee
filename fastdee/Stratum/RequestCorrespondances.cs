@@ -69,6 +69,18 @@ namespace fastdee.Stratum
             return new PendingRequest<T>(send, track.Task);
         }
 
+        /// <summary>
+        /// Wake up a sleeping task (remote method call) by providing either a successful value or an error.
+        /// </summary>
+        /// <param name="id">Request identificator as got from the server.</param>
+        /// <param name="result">Successful thing. Passed to your validator as is <see cref="Request{T}(string, object[], Func{object?, T})"/>.</param>
+        /// <param name="error">Only relevant if no successful <paramref name="result"/> is given. If nonnull, will cause the request to fail.</param>
+        /// <returns>False if <paramref name="id"/> matches no known request.</returns>
+        /// <exception cref="NotImplementedException">You are trying to trigger with both <paramref name="result"/> and <paramref name="error"/> set to null.</exception>
+        /// <remarks>
+        /// If this either returns true or throws then the <paramref name="id"/> is consumed.
+        /// Generally called from some other 'pumping' thread.
+        /// </remarks>
         internal bool Trigger(ulong id, object? result, object? error)
         {
             var subject = GetAndForget(id);
