@@ -56,5 +56,10 @@ namespace fastdee
             "keccak" => (coinbase) => PoolOps.Merkles.SingleSha(coinbase),
             _ => null
         };
+
+        internal static DifficultyMultipliers ChooseDifficulties(string algo, double? desired = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

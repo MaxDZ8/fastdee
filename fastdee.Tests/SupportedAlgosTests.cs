@@ -43,5 +43,26 @@ namespace fastdee.Tests
             Assert.Equal(expected, merkle.blob);
         }
 
+        [Theory]
+        [InlineData("keccak", 1.0, 256.0, 1.0)]
+        public void KnowsDifficultyMultipliers(string algo, double stratum, double one, double share)
+        {
+            var gen = Program.ChooseDifficulties(algo);
+            Assert.NotNull(gen);
+            Assert.Equal(stratum, gen.Stratum);
+            Assert.Equal(one, gen.One);
+            Assert.Equal(share, gen.Share);
+        }
+
+        [Theory]
+        [InlineData("keccak", 256.0, 1.0)]
+        public void CanOverrideStratumMultiplier(string algo, double one, double share)
+        {
+            var gen = Program.ChooseDifficulties(algo, 456.789);
+            Assert.NotNull(gen);
+            Assert.Equal(456.789, gen.Stratum);
+            Assert.Equal(one, gen.One);
+            Assert.Equal(share, gen.Share);
+        }
     }
 }
