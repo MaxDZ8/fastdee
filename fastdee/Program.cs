@@ -59,7 +59,27 @@ namespace fastdee
 
         internal static DifficultyMultipliers ChooseDifficulties(string algo, double? desired = null)
         {
-            throw new NotImplementedException();
+            var diffy = ChooseTypicalDifficulties(algo);
+            if (false == desired.HasValue) return diffy;
+            return new DifficultyMultipliers()
+            {
+                Stratum = desired.Value,
+                One = diffy.One,
+                Share = diffy.Share
+            };
         }
+
+        internal static DifficultyMultipliers ChooseTypicalDifficulties(string algo) => algo.ToLowerInvariant() switch
+        {
+            "keccak" => new DifficultyMultipliers()
+            {
+                Stratum = 1,
+                One = 256,
+                Share = 1
+            },
+            _ => throw new NotImplementedException()
+        };
+
+        internal static DifficultyTarget MakeDiffTarget(string algo, DifficultyMultipliers mults, double serverReq) => throw new NotImplementedException();
     }
 }
