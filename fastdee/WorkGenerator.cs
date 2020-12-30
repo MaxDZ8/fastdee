@@ -8,7 +8,7 @@ namespace fastdee
     /// Everything required to produce a block header to hash.
     /// Some comes from the initial stratum subscription, most from the mining.notify updates.
     /// </summary>
-    public class WorkInfo
+    public class WorkGenerator
     {
         /// <summary>
         /// Given coinbase, generate the first merkle root. Some coins do it differently.

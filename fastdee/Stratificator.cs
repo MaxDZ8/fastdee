@@ -16,7 +16,7 @@ namespace fastdee
         readonly ServerConnectionInfo serverInfo;
         readonly ThreadShared delicate = new ThreadShared();
 
-        readonly WorkInfo.FromCoinbaseFunc makeMerkleRoot;
+        readonly WorkGenerator.FromCoinbaseFunc makeMerkleRoot;
 
         class ThreadShared
         {
@@ -27,10 +27,10 @@ namespace fastdee
             /// </summary>
             public IExtraNonce2Provider nonce2 = new PoolOps.CanonicalNonce2Roller();
 
-            public readonly WorkInfo work = new WorkInfo();
+            public readonly WorkGenerator work = new WorkGenerator();
         }
 
-        internal Stratificator(ServerConnectionInfo serverInfo, WorkInfo.FromCoinbaseFunc makeMerkleRoot)
+        internal Stratificator(ServerConnectionInfo serverInfo, WorkGenerator.FromCoinbaseFunc makeMerkleRoot)
         {
             this.serverInfo = serverInfo;
             this.makeMerkleRoot = makeMerkleRoot;

@@ -51,7 +51,7 @@ namespace fastdee
             return $"fastdee/{major}.{minor}.{patch}";
         }
 
-        static internal WorkInfo.FromCoinbaseFunc? ChooseMerkleGenerator(string algo) => algo.ToLowerInvariant() switch
+        static internal WorkGenerator.FromCoinbaseFunc? ChooseMerkleGenerator(string algo) => algo.ToLowerInvariant() switch
         {
             "keccak" => (coinbase) => PoolOps.Merkles.SingleSha(coinbase),
             _ => null
