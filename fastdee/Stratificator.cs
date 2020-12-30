@@ -14,9 +14,7 @@ namespace fastdee
     class Stratificator
     {
         readonly ServerConnectionInfo serverInfo;
-        readonly ThreadShared delicate = new ThreadShared();
-
-        readonly WorkGenerator.FromCoinbaseFunc makeMerkleRoot;
+        readonly ThreadShared delicate;
 
         class ThreadShared
         {
@@ -26,14 +24,18 @@ namespace fastdee
             /// I want to keep it easy there so I instantiate something right away.
             /// </summary>
             public IExtraNonce2Provider nonce2 = new PoolOps.CanonicalNonce2Roller();
+            public readonly WorkGenerator workGenerator;
 
-            public readonly WorkGenerator work = new WorkGenerator();
+            public ThreadShared(WorkGenerator workGenerator)
+            {
+                this.workGenerator = workGenerator;
+            }
         }
 
-        internal Stratificator(ServerConnectionInfo serverInfo, WorkGenerator.FromCoinbaseFunc makeMerkleRoot)
+        internal Stratificator(ServerConnectionInfo serverInfo, WorkGenerator workGenerator)
         {
             this.serverInfo = serverInfo;
-            this.makeMerkleRoot = makeMerkleRoot;
+            delicate = new ThreadShared(workGenerator);
         }
 
         internal async Task PumpForeverAsync()
@@ -103,7 +105,7 @@ namespace fastdee
             lock (delicate)
             {
                 if (e.newJob.flush) delicate.nonce2.Reset();
-                delicate.work.NewJob(e.newJob, delicate.nonce2, makeMerkleRoot);
+                delicate.workGenerator.NewJob(e.newJob, delicate.nonce2);
             }
         }
 
@@ -137,7 +139,7 @@ namespace fastdee
             {
                 // For the time being, assume this is good enough. There are algorithms complicating the thing but I don't want to support them... for now.
                 delicate.nonce2 = new PoolOps.CanonicalNonce2Roller();
-                delicate.work.NonceSettings(subscribed.extraNonceOne, subscribed.extraNonceTwoByteCount);
+                delicate.workGenerator.NonceSettings(subscribed.extraNonceOne, subscribed.extraNonceTwoByteCount);
             }
         }
     }

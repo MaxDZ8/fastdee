@@ -28,13 +28,14 @@ namespace fastdee
             }
             var presentingAs = options.SubscribeAs ?? MyCanonicalSubscription();
             var serverInfo = new ServerConnectionInfo(poolurl, poolport, presentingAs, options.UserName, options.WorkerName, options.SillyPassword);
-            var merkleGenerator = ChooseMerkleGenerator(options.Algorithm);
-            if (null == merkleGenerator)
+            var initialMerkle = ChooseMerkleGenerator(options.Algorithm);
+            if (null == initialMerkle)
             {
                 Console.Error.WriteLine($"Unsupported algorithm: {options.Algorithm}");
                 return -3;
             }
-            new Stratificator(serverInfo, merkleGenerator).PumpForeverAsync().Wait(); // TODO: the other services
+            var workGenerator = new WorkGenerator(initialMerkle);
+            new Stratificator(serverInfo, workGenerator).PumpForeverAsync().Wait(); // TODO: the other services
             return -2;
         }
 

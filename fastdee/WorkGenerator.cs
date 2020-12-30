@@ -23,7 +23,15 @@ namespace fastdee
         int nonce2Off;
         byte[] header = Array.Empty<byte>();
 
+        readonly FromCoinbaseFunc initialMerkle;
+
+
         public ReadOnlySpan<byte> Header => header;
+
+        public WorkGenerator(FromCoinbaseFunc initialMerkle)
+        {
+            this.initialMerkle = initialMerkle;
+        }
 
         public void NonceSettings(byte[] extraNonceOne, ushort extraNonceTwoByteCount)
         {
@@ -31,14 +39,13 @@ namespace fastdee
             this.extraNonceTwoByteCount = extraNonceTwoByteCount;
         }
 
-        public void NewJob(Stratum.Notification.NewJob job, IExtraNonce2Provider nonce2,
-                             FromCoinbaseFunc merkleMaker)
+        public void NewJob(Stratum.Notification.NewJob job, IExtraNonce2Provider nonce2)
         {
             currently = job;
             nonce2Off = job.cbHead.Length + extraNonceOne.Length;
             var coinbase = MakeCoinbaseTemplate(job.cbHead, extraNonceOne, nonce2Off, extraNonceTwoByteCount, job.cbTail);
             StampNonce2(coinbase, nonce2Off, nonce2);
-            var merkle = MakeNewMerkles(merkleMaker, job.merkles, coinbase);
+            var merkle = MakeNewMerkles(initialMerkle, job.merkles, coinbase);
             SwapUintBytes(merkle); // that's from stratum documentation
             var header = job.blockVer.Concat(job.prevBlock.blob).Concat(merkle);
             if (job.trie != null) header = header.Concat(job.trie); // not present in stratum v1 docs nor in M8M but sgminer has it (?)
