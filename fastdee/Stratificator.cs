@@ -13,7 +13,6 @@ namespace fastdee
     /// </summary>
     class Stratificator
     {
-        readonly ServerConnectionInfo serverInfo;
         readonly ThreadShared delicate;
 
         class ThreadShared
@@ -32,19 +31,18 @@ namespace fastdee
             }
         }
 
-        internal Stratificator(ServerConnectionInfo serverInfo, WorkGenerator workGenerator)
+        internal Stratificator(WorkGenerator workGenerator)
         {
-            this.serverInfo = serverInfo;
             delicate = new ThreadShared(workGenerator);
         }
 
-        internal async Task PumpForeverAsync()
+        internal async Task PumpForeverAsync(ServerConnectionInfo serverInfo)
         {
             while (true)
             {
                 try
                 {
-                    await PumpConnectionAsync();
+                    await PumpConnectionAsync(serverInfo);
                 }
                 catch
                 {
@@ -56,7 +54,7 @@ namespace fastdee
             }
         }
 
-        async Task PumpConnectionAsync()
+        async Task PumpConnectionAsync(ServerConnectionInfo serverInfo)
         {
             var addr = Dns.GetHostAddresses(serverInfo.poolurl)[0];
             var endpoint = new IPEndPoint(addr, serverInfo.poolport);

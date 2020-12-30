@@ -35,7 +35,7 @@ namespace fastdee
                 return -3;
             }
             var workGenerator = new WorkGenerator(initialMerkle);
-            new Stratificator(serverInfo, workGenerator).PumpForeverAsync().Wait(); // TODO: the other services
+            new Stratificator(workGenerator).PumpForeverAsync(serverInfo).Wait(); // TODO: the other services
             return -2;
         }
 
