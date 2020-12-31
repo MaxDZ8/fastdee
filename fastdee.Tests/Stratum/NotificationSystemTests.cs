@@ -79,5 +79,35 @@ namespace fastdee.Tests.Stratum
             Assert.Equal(new byte[] { 0x5f, 0xcc, 0xec, 0x8d }, job.ntime);
             Assert.False(job.flush);
         }
+
+        [Fact]
+        public void ServerCanSetIntegerDifficulty()
+        {
+            var observed = "[128]";
+            var concrete = JsonConvert.DeserializeObject<Newtonsoft.Json.Linq.JArray>(observed);
+            var notifier = new NotificationSystem();
+            var diff = 0.0;
+            notifier.DifficultyReceived += (src, ev) => diff = ev.difficulty;
+            var methodName = fastdee.Stratum.Notification.SetDifficulty.CommandString;
+            var processed = notifier.Mangle(methodName, concrete);
+
+            Assert.True(processed);
+            Assert.Equal(128.0, diff);
+        }
+
+        [Fact]
+        public void ServerCanSetFloatingDifficulty()
+        {
+            var observed = "[48.24]";
+            var concrete = JsonConvert.DeserializeObject<Newtonsoft.Json.Linq.JArray>(observed);
+            var notifier = new NotificationSystem();
+            var diff = 0.0;
+            notifier.DifficultyReceived += (src, ev) => diff = ev.difficulty;
+            var methodName = fastdee.Stratum.Notification.SetDifficulty.CommandString;
+            var processed = notifier.Mangle(methodName, concrete);
+
+            Assert.True(processed);
+            Assert.Equal(48.24, diff);
+        }
     }
 }

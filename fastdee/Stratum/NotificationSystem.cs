@@ -11,21 +11,36 @@ namespace fastdee.Stratum
         }
         public event EventHandler<NewJobReceivedEventArgs>? NewJobReceived;
         protected virtual void OnNewJobReceived(NewJobReceivedEventArgs args) => NewJobReceived?.Invoke(this, args);
+        public class DifficultyReceivedEventArgs : EventArgs
+        {
+            public readonly double difficulty;
+            public DifficultyReceivedEventArgs(double difficulty) { this.difficulty = difficulty; }
+        }
+        public event EventHandler<DifficultyReceivedEventArgs>? DifficultyReceived;
+        protected virtual void OnDifficultyReceived(DifficultyReceivedEventArgs args) => DifficultyReceived?.Invoke(this, args);
 
 
 
         public bool Mangle(string method, object? evargs) => method.Trim() switch
         {
             "mining.notify" => MangleMiningNotify(evargs),
+            Notification.SetDifficulty.CommandString => MangleSetDifficulty(evargs),
             null => throw new MissingRequiredException("notifications must have a method string"),
             "" => throw new MissingRequiredException("notifications must have non-empty method string"),
             _ => false
         };
 
-        public bool MangleMiningNotify(object? evargs)
+        bool MangleMiningNotify(object? evargs)
         {
             var res = NotificationParser.MiningNotify(evargs);
             OnNewJobReceived(new NewJobReceivedEventArgs(res));
+            return true;
+        }
+
+        bool MangleSetDifficulty(object? evargs)
+        {
+            var res = NotificationParser.SetDifficulty(evargs);
+            OnDifficultyReceived(new DifficultyReceivedEventArgs(res));
             return true;
         }
 

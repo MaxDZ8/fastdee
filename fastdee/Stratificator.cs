@@ -13,10 +13,7 @@ namespace fastdee
     /// </summary>
     class Stratificator
     {
-        readonly ServerConnectionInfo serverInfo;
-        readonly ThreadShared delicate = new ThreadShared();
-
-        readonly WorkInfo.FromCoinbaseFunc makeMerkleRoot;
+        readonly ThreadShared delicate;
 
         class ThreadShared
         {
@@ -26,23 +23,30 @@ namespace fastdee
             /// I want to keep it easy there so I instantiate something right away.
             /// </summary>
             public IExtraNonce2Provider nonce2 = new PoolOps.CanonicalNonce2Roller();
+            public readonly WorkGenerator workGenerator;
 
-            public readonly WorkInfo work = new WorkInfo();
+            public ThreadShared(WorkGenerator workGenerator)
+            {
+                this.workGenerator = workGenerator;
+            }
         }
 
-        internal Stratificator(ServerConnectionInfo serverInfo, WorkInfo.FromCoinbaseFunc makeMerkleRoot)
+        public event EventHandler<Stratum.NotificationSystem.DifficultyReceivedEventArgs>? DifficultyReceived;
+        protected virtual void OnDifficultyReceived(Stratum.NotificationSystem.DifficultyReceivedEventArgs ev)
+            => DifficultyReceived?.Invoke(this, ev);
+
+        internal Stratificator(WorkGenerator workGenerator)
         {
-            this.serverInfo = serverInfo;
-            this.makeMerkleRoot = makeMerkleRoot;
+            delicate = new ThreadShared(workGenerator);
         }
 
-        internal async Task PumpForeverAsync()
+        internal async Task PumpForeverAsync(ServerConnectionInfo serverInfo)
         {
             while (true)
             {
                 try
                 {
-                    await PumpConnectionAsync();
+                    await PumpConnectionAsync(serverInfo);
                 }
                 catch
                 {
@@ -54,7 +58,7 @@ namespace fastdee
             }
         }
 
-        async Task PumpConnectionAsync()
+        async Task PumpConnectionAsync(ServerConnectionInfo serverInfo)
         {
             var addr = Dns.GetHostAddresses(serverInfo.poolurl)[0];
             var endpoint = new IPEndPoint(addr, serverInfo.poolport);
@@ -67,6 +71,7 @@ namespace fastdee
             using var continuator = new Stratum.StratumContinuator(pumper.WriteAsync);
             var notificator = new Stratum.NotificationSystem();
             notificator.NewJobReceived += NewJobReceived;
+            notificator.DifficultyReceived += (_, ev) => OnDifficultyReceived(ev);
             pumper.GottaLine += (src, ev) =>
             {
                 var stuff = Newtonsoft.Json.JsonConvert.DeserializeObject<JsonRpc.Message>(ev.payload);
@@ -103,7 +108,7 @@ namespace fastdee
             lock (delicate)
             {
                 if (e.newJob.flush) delicate.nonce2.Reset();
-                delicate.work.NewJob(e.newJob, delicate.nonce2, makeMerkleRoot);
+                delicate.workGenerator.NewJob(e.newJob, delicate.nonce2);
             }
         }
 
@@ -137,7 +142,7 @@ namespace fastdee
             {
                 // For the time being, assume this is good enough. There are algorithms complicating the thing but I don't want to support them... for now.
                 delicate.nonce2 = new PoolOps.CanonicalNonce2Roller();
-                delicate.work.NonceSettings(subscribed.extraNonceOne, subscribed.extraNonceTwoByteCount);
+                delicate.workGenerator.NonceSettings(subscribed.extraNonceOne, subscribed.extraNonceTwoByteCount);
             }
         }
     }

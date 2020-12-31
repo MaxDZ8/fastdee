@@ -28,13 +28,18 @@ namespace fastdee
             }
             var presentingAs = options.SubscribeAs ?? MyCanonicalSubscription();
             var serverInfo = new ServerConnectionInfo(poolurl, poolport, presentingAs, options.UserName, options.WorkerName, options.SillyPassword);
-            var merkleGenerator = ChooseMerkleGenerator(options.Algorithm);
-            if (null == merkleGenerator)
+            var initialMerkle = ChooseMerkleGenerator(options.Algorithm);
+            if (null == initialMerkle)
             {
                 Console.Error.WriteLine($"Unsupported algorithm: {options.Algorithm}");
                 return -3;
             }
-            new Stratificator(serverInfo, merkleGenerator).PumpForeverAsync().Wait(); // TODO: the other services
+            var factors = ChooseDifficulties(options.Algorithm, options.DifficultyMultiplier);
+            var difficultyCalculator = new LockingCurrentDifficulty(ChooseDiffMaker(options.Algorithm, factors));
+            var workGenerator = new WorkGenerator(initialMerkle);
+            var stratum = new Stratificator(workGenerator);
+            stratum.DifficultyReceived += (src, ev) => difficultyCalculator.Set(ev.difficulty);
+            stratum.PumpForeverAsync(serverInfo).Wait(); // TODO: the other services
             return -2;
         }
 
@@ -51,10 +56,40 @@ namespace fastdee
             return $"fastdee/{major}.{minor}.{patch}";
         }
 
-        static internal WorkInfo.FromCoinbaseFunc? ChooseMerkleGenerator(string algo) => algo.ToLowerInvariant() switch
+        static internal WorkGenerator.FromCoinbaseFunc? ChooseMerkleGenerator(string algo) => algo.ToLowerInvariant() switch
         {
             "keccak" => (coinbase) => PoolOps.Merkles.SingleSha(coinbase),
             _ => null
         };
+
+        internal static DifficultyMultipliers ChooseDifficulties(string algo, double? desired = null)
+        {
+            var diffy = ChooseTypicalDifficulties(algo);
+            if (false == desired.HasValue) return diffy;
+            return new DifficultyMultipliers()
+            {
+                Stratum = desired.Value,
+                One = diffy.One,
+                Share = diffy.Share
+            };
+        }
+
+        internal static DifficultyMultipliers ChooseTypicalDifficulties(string algo) => algo.ToLowerInvariant() switch
+        {
+            "keccak" => new DifficultyMultipliers()
+            {
+                Stratum = 1,
+                One = 256,
+                Share = 1
+            },
+            _ => throw new NotImplementedException()
+        };
+
+        internal static ICurrentDifficulty ChooseDiffMaker(string algo, DifficultyMultipliers mults) => algo.ToLowerInvariant() switch
+            {
+                "keccak" => new BtcLikeDifficulty(mults.Stratum, mults.One),
+                _ => throw new NotImplementedException()
+            };
+        
     }
 }

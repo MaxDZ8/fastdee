@@ -38,6 +38,24 @@ namespace fastdee.Stratum
             return res;
         }
 
+        internal static double SetDifficulty(object? evargs)
+        {
+            if (null == evargs) throw new MissingRequiredException("mining.set_difficulty: no payload given");
+            if (evargs is not JArray concrete) throw new MissingRequiredException("mining.set_difficulty: payload must be an array");
+            if (concrete.Count != 1) throw new BadParseException("mining.set_difficulty: must have 1 element");
+            var there = concrete[0];
+            switch (there.Type)
+            {
+                case JTokenType.Integer:
+                    {
+                        var hopefully = (long)there; // hopefully won't miss data
+                        return hopefully;
+                    }
+                case JTokenType.Float: return (double)there;
+            }
+            throw new BadParseException("mining.set_difficulty: unrecognized difficulty number type");
+        }
+
         static Mining.Merkle AsMerkle(JToken maybe)
         {
             if (maybe.Type != JTokenType.String) throw new BadParseException("mining.notify: merkles must be strings");
