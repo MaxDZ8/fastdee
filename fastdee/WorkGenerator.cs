@@ -16,7 +16,7 @@ namespace fastdee
         public delegate Mining.Merkle FromCoinbaseFunc(byte[] coinbase);
 
         byte[] extraNonceOne = Array.Empty<byte>();
-        ushort extraNonceTwoByteCount;
+        readonly PoolOps.CanonicalNonce2Roller nonce2 = new PoolOps.CanonicalNonce2Roller();
 
         Stratum.Notification.NewJob? currently;
 
@@ -25,8 +25,12 @@ namespace fastdee
 
         readonly FromCoinbaseFunc initialMerkle;
 
-
+        /// <summary>
+        /// You can always pull an header out of me and it's always non-null and maybe even non-empty...
+        /// But it's only useful if <see cref="Significative"/> evaluates to true.
+        /// </summary>
         public ReadOnlySpan<byte> Header => header;
+        public bool Significative => currently != null;
 
         public WorkGenerator(FromCoinbaseFunc initialMerkle)
         {
@@ -36,14 +40,14 @@ namespace fastdee
         public void NonceSettings(byte[] extraNonceOne, ushort extraNonceTwoByteCount)
         {
             this.extraNonceOne = extraNonceOne;
-            this.extraNonceTwoByteCount = extraNonceTwoByteCount;
+            if (4 != extraNonceTwoByteCount) throw new NotImplementedException("only supported nonce2 size is 4");
         }
 
-        public void NewJob(Stratum.Notification.NewJob job, IExtraNonce2Provider nonce2)
+        public void NewJob(Stratum.Notification.NewJob job)
         {
             currently = job;
             nonce2Off = job.cbHead.Length + extraNonceOne.Length;
-            var coinbase = MakeCoinbaseTemplate(job.cbHead, extraNonceOne, nonce2Off, extraNonceTwoByteCount, job.cbTail);
+            var coinbase = MakeCoinbaseTemplate(job.cbHead, extraNonceOne, nonce2Off, nonce2.ByteCount, job.cbTail);
             StampNonce2(coinbase, nonce2Off, nonce2);
             var merkle = MakeNewMerkles(initialMerkle, job.merkles, coinbase);
             SwapUintBytes(merkle); // that's from stratum documentation
@@ -105,5 +109,12 @@ namespace fastdee
                 blob = blob[4..];
             }
         }
+
+        internal void Stop()
+        {
+            currently = null;
+        }
+
+        internal void NextNonce(ulong n) => nonce2.NextNonce(n);
     }
 }

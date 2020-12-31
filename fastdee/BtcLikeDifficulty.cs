@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace fastdee
 {
-    class BtcLikeDifficulty : ICurrentDifficulty
+    class BtcLikeDifficulty : IDifficultyCalculation
     {
         double difficulty;
         DifficultyTarget target = new DifficultyTarget();

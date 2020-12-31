@@ -7,14 +7,14 @@ using System.Threading.Tasks;
 namespace fastdee
 {
     /// <summary>
-    /// Generate a <see cref="ICurrentDifficulty"/> and pass it to me.
+    /// Generate a <see cref="IDifficultyCalculation"/> and pass it to me.
     /// I will own it and use it as a lock to protect it from concurrent access.
     /// </summary>
-    class LockingCurrentDifficulty : ICurrentDifficulty
+    class LockingCurrentDifficulty : IDifficultyCalculation
     {
-        readonly ICurrentDifficulty realDeal;
+        readonly IDifficultyCalculation realDeal;
 
-        internal LockingCurrentDifficulty(ICurrentDifficulty gimme)
+        internal LockingCurrentDifficulty(IDifficultyCalculation gimme)
         {
             realDeal = gimme;
         }

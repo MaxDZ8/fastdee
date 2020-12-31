@@ -24,7 +24,7 @@ namespace fastdee.Stratum
         public bool Mangle(string method, object? evargs) => method.Trim() switch
         {
             "mining.notify" => MangleMiningNotify(evargs),
-            Notification.SetDifficulty.CommandString => MangleSetDifficulty(evargs),
+            "mining.set_difficulty" => MangleSetDifficulty(evargs),
             null => throw new MissingRequiredException("notifications must have a method string"),
             "" => throw new MissingRequiredException("notifications must have non-empty method string"),
             _ => false

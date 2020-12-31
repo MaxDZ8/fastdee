@@ -13,31 +13,12 @@ namespace fastdee
     /// </summary>
     class Stratificator
     {
-        readonly ThreadShared delicate;
+        readonly Stratum.ICallbacks callbacks;
+        bool traffic;
 
-        class ThreadShared
+        internal Stratificator(Stratum.ICallbacks callbacks)
         {
-            public StratumState state;
-            public bool alive;
-            /// <summary>
-            /// I want to keep it easy there so I instantiate something right away.
-            /// </summary>
-            public IExtraNonce2Provider nonce2 = new PoolOps.CanonicalNonce2Roller();
-            public readonly WorkGenerator workGenerator;
-
-            public ThreadShared(WorkGenerator workGenerator)
-            {
-                this.workGenerator = workGenerator;
-            }
-        }
-
-        public event EventHandler<Stratum.NotificationSystem.DifficultyReceivedEventArgs>? DifficultyReceived;
-        protected virtual void OnDifficultyReceived(Stratum.NotificationSystem.DifficultyReceivedEventArgs ev)
-            => DifficultyReceived?.Invoke(this, ev);
-
-        internal Stratificator(WorkGenerator workGenerator)
-        {
-            delicate = new ThreadShared(workGenerator);
+            this.callbacks = callbacks;
         }
 
         internal async Task PumpForeverAsync(ServerConnectionInfo serverInfo)
@@ -51,8 +32,7 @@ namespace fastdee
                 catch
                 {
                     // Yeah, suppress all. I really mean it.
-                    if (!Alive) return;
-                    lock (delicate) delicate.state = StratumState.Failed;
+                    if (!traffic) return;
                 }
                 await Task.Delay(60_000); // those errors usually don't go away easily.
             }
@@ -63,15 +43,15 @@ namespace fastdee
             var addr = Dns.GetHostAddresses(serverInfo.poolurl)[0];
             var endpoint = new IPEndPoint(addr, serverInfo.poolport);
             using var socket = new Socket(endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            lock (delicate) delicate.state = StratumState.Connecting;
+            callbacks.Connecting();
             await socket.ConnectAsync(endpoint);
             // Since I initiate the stratum communication, I can take it easy there.
             // Nothing will come before I send anything.
             using var pumper = new SocketPipelinesLineChannel(socket);
             using var continuator = new Stratum.StratumContinuator(pumper.WriteAsync);
             var notificator = new Stratum.NotificationSystem();
-            notificator.NewJobReceived += NewJobReceived;
-            notificator.DifficultyReceived += (_, ev) => OnDifficultyReceived(ev);
+            notificator.NewJobReceived += (_, ev) => callbacks.StartNewJob(ev.newJob);
+            notificator.DifficultyReceived += (_, ev) => callbacks.SetDifficulty(ev.difficulty);
             pumper.GottaLine += (src, ev) =>
             {
                 var stuff = Newtonsoft.Json.JsonConvert.DeserializeObject<JsonRpc.Message>(ev.payload);
@@ -88,62 +68,13 @@ namespace fastdee
                 }
             };
 
-            lock (delicate) delicate.state = StratumState.Subscribing;
+            callbacks.Subscribing();
             var subscribed = await continuator.SubscribeAsync(serverInfo.presentingAs);
-            IntantiateOperations(subscribed);
-            lock (delicate)
-            {
-                delicate.state = StratumState.Authorizing;
-                delicate.alive = true;
-            }
+            traffic = true;
+            callbacks.Subscribed(subscribed);
             var authorized = await continuator.AuthorizeAsync(serverInfo.userName, serverInfo.workerName, serverInfo.sillyPassword);
-            if (false == authorized) throw new BadStratumAuthException();
-            Console.WriteLine("OK Authorized");
+            callbacks.Authorized(authorized);
             await Task.Delay(-1); // can I do anything more useful with it?
-        }
-
-        private void NewJobReceived(object? sender, Stratum.NotificationSystem.NewJobReceivedEventArgs e)
-        {
-            Console.WriteLine($"OK Job={e.newJob.jobid}, flushing={e.newJob.flush}");
-            lock (delicate)
-            {
-                if (e.newJob.flush) delicate.nonce2.Reset();
-                delicate.workGenerator.NewJob(e.newJob, delicate.nonce2);
-            }
-        }
-
-        public StratumState Status
-        {
-            get
-            {
-                lock (delicate) return delicate.state;
-            }
-        }
-        /// <summary>
-        /// True if we connected to a server which gave us at least a reply.
-        /// </summary>
-        public bool Alive
-        {
-            get
-            {
-                lock (delicate) return delicate.alive;
-            }
-        }
-
-        /// <summary>
-        /// In theory there is no need to re-instantiate this at each connection, servers are unlikely to change their mind on the fly...
-        /// ... but who says the server didn't go down for an upgrade and changed its mind?
-        /// </summary>
-        /// <param name="subscribed"></param>
-        void IntantiateOperations(Stratum.Response.MiningSubscribe subscribed)
-        {
-            if (subscribed.extraNonceTwoByteCount != 4) throw new NotImplementedException("only supported nonce2 size is 4");
-            lock (delicate)
-            {
-                // For the time being, assume this is good enough. There are algorithms complicating the thing but I don't want to support them... for now.
-                delicate.nonce2 = new PoolOps.CanonicalNonce2Roller();
-                delicate.workGenerator.NonceSettings(subscribed.extraNonceOne, subscribed.extraNonceTwoByteCount);
-            }
         }
     }
 }

@@ -36,9 +36,8 @@ namespace fastdee
             }
             var factors = ChooseDifficulties(options.Algorithm, options.DifficultyMultiplier);
             var difficultyCalculator = new LockingCurrentDifficulty(ChooseDiffMaker(options.Algorithm, factors));
-            var workGenerator = new WorkGenerator(initialMerkle);
-            var stratum = new Stratificator(workGenerator);
-            stratum.DifficultyReceived += (src, ev) => difficultyCalculator.Set(ev.difficulty);
+            var stratHelp = new Stratum.Connector(new WorkGenerator(initialMerkle), difficultyCalculator);
+            var stratum = new Stratificator(stratHelp);
             stratum.PumpForeverAsync(serverInfo).Wait(); // TODO: the other services
             return -2;
         }
@@ -85,7 +84,7 @@ namespace fastdee
             _ => throw new NotImplementedException()
         };
 
-        internal static ICurrentDifficulty ChooseDiffMaker(string algo, DifficultyMultipliers mults) => algo.ToLowerInvariant() switch
+        internal static IDifficultyCalculation ChooseDiffMaker(string algo, DifficultyMultipliers mults) => algo.ToLowerInvariant() switch
             {
                 "keccak" => new BtcLikeDifficulty(mults.Stratum, mults.One),
                 _ => throw new NotImplementedException()

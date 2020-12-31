@@ -68,10 +68,9 @@ namespace fastdee.Tests
             var pack = new NewJob(jobid, version, trie, coinhead, cointail, nbits, ntime, clean);
             Array.Copy(prevHash, pack.prevBlock.blob, pack.prevBlock.blob.Length);
             pack.merkles.AddRange(merkles.Select(el => AsMerkle(el)));
-            var nroller = new fastdee.PoolOps.CanonicalNonce2Roller();
-            nroller.NextNonce(nonce2);
+            uut.NextNonce(nonce2);
             uut.NonceSettings(n1, n2sz);
-            uut.NewJob(pack, nroller);
+            uut.NewJob(pack);
             Assert.Equal(expected, uut.Header.ToArray());
         }
 
