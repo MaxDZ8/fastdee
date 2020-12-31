@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace fastdee.Stratum
 {
@@ -16,13 +14,39 @@ namespace fastdee.Stratum
     /// </summary>
     class WorkGenerator
     {
-        public bool Empty => throw new NotImplementedException();
+        class Both
+        {
+            internal ShareSubmitInfo info;
+            internal IReadOnlyList<byte> header;
 
-        public ulong ConsumedNonces => throw new NotImplementedException();
+            internal Both(ShareSubmitInfo info, IReadOnlyList<byte> header)
+            {
+                this.info = info;
+                this.header = header;
+            }
+        }
+        Both? both; // capture pair non-null
+        DifficultyTarget? target;
+
+        public bool Empty => null == target || null == both;
+
+        public ulong ConsumedNonces { get; private set; }
 
         internal void SetHeader(ShareSubmitInfo tracking, IReadOnlyList<byte> hdr)
         {
-            throw new NotImplementedException();
+            bool changed;
+            if (null == both)
+            {
+                both = new Both(tracking, hdr);
+                changed = true;
+            }
+            else
+            {
+                changed = hdr.SequenceEqual(both.header) == false;
+                if (changed) both.header = hdr;
+                both.info = tracking;
+            }
+            if (changed) ConsumedNonces = 0;
         }
 
         /// <summary>
@@ -31,17 +55,25 @@ namespace fastdee.Stratum
         /// <param name="nonceCount">Contiguous nonces the worker plans to test.</param>
         internal Work WannaConsume(ulong nonceCount)
         {
-            throw new NotImplementedException();
+            if (null == target || null == both)
+            {
+                // Can't use Empty here, the static analyzer won't guess the non-nullability
+                throw new InvalidOperationException("won't produce work before being fed");
+            }
+            if (nonceCount == 0) throw new ArgumentException("you must consume at least a nonce", nameof(nonceCount));
+            var rem = ulong.MaxValue - ConsumedNonces;
+            if (rem < nonceCount) throw new ArgumentException("too many nonces requested", nameof(nonceCount));
+            var res = new Work(target, both.header, both.info, ConsumedNonces);
+            ConsumedNonces += nonceCount;
+            return res;
         }
 
-        internal void SetTarget(DifficultyTarget target)
-        {
-            throw new NotImplementedException();
-        }
+        internal void SetTarget(DifficultyTarget target) => this.target = target;
 
         internal void Stop()
         {
-            throw new NotImplementedException();
+            // Note: target is kept.
+            both = null;
         }
     }
 }
