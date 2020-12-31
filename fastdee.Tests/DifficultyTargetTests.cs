@@ -15,12 +15,13 @@ namespace fastdee.Tests
         public void SupportsDifficultyCalculationTrulyObserved(double diff, string algo, double expectedDiff, ulong[] expectedTarget)
         {
             var mults = Program.ChooseTypicalDifficulties(algo);
-            var uut = Program.MakeDiffTarget(algo, mults, diff);
-            Assert.Equal(expectedDiff, uut.ShareDiff);
-            Assert.Equal(expectedTarget[0], uut.TargA);
-            Assert.Equal(expectedTarget[1], uut.TargB);
-            Assert.Equal(expectedTarget[2], uut.TargC);
-            Assert.Equal(expectedTarget[3], uut.TargD);
+            var uut = Program.ChooseDiffMaker(algo, mults);
+            uut.Set(diff);
+            Assert.Equal(expectedDiff, uut.DifficultyTarget.ShareDiff);
+            Assert.Equal(expectedTarget[0], uut.DifficultyTarget.TargA);
+            Assert.Equal(expectedTarget[1], uut.DifficultyTarget.TargB);
+            Assert.Equal(expectedTarget[2], uut.DifficultyTarget.TargC);
+            Assert.Equal(expectedTarget[3], uut.DifficultyTarget.TargD);
         }
 
         /// <summary>
@@ -35,12 +36,13 @@ namespace fastdee.Tests
         public void SupportsDifficultyCalculationSynthetic(double diff, string algo, double expectedDiff, ulong[] expectedTarget)
         {
             var mults = Program.ChooseTypicalDifficulties(algo);
-            var uut = Program.MakeDiffTarget(algo, mults, diff);
-            Assert.Equal(expectedDiff, uut.ShareDiff);
-            Assert.Equal(expectedTarget[0], uut.TargA);
-            Assert.Equal(expectedTarget[1], uut.TargB);
-            Assert.Equal(expectedTarget[2], uut.TargC);
-            Assert.Equal(expectedTarget[3], uut.TargD);
+            var uut = Program.ChooseDiffMaker(algo, mults);
+            uut.Set(diff);
+            Assert.Equal(expectedDiff, uut.DifficultyTarget.ShareDiff);
+            Assert.Equal(expectedTarget[0], uut.DifficultyTarget.TargA);
+            Assert.Equal(expectedTarget[1], uut.DifficultyTarget.TargB);
+            Assert.Equal(expectedTarget[2], uut.DifficultyTarget.TargC);
+            Assert.Equal(expectedTarget[3], uut.DifficultyTarget.TargD);
         }
 
         // I noticed C# diverges from C in those cases (I'm not sure what M8M used to do but it's probably coherent with legacy).
@@ -54,7 +56,8 @@ namespace fastdee.Tests
         {
             var algo = "keccak";
             var mults = Program.ChooseTypicalDifficulties(algo);
-            Assert.Throws<System.ArgumentException>(() => Program.MakeDiffTarget(algo, mults, diff));
+            var uut = Program.ChooseDiffMaker(algo, mults);
+            Assert.Throws<System.ArgumentException>(() => uut.Set(diff));
         }
     }
 }

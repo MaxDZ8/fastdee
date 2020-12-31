@@ -31,6 +31,10 @@ namespace fastdee
             }
         }
 
+        public event EventHandler<Stratum.NotificationSystem.DifficultyReceivedEventArgs>? DifficultyReceived;
+        protected virtual void OnDifficultyReceived(Stratum.NotificationSystem.DifficultyReceivedEventArgs ev)
+            => DifficultyReceived?.Invoke(this, ev);
+
         internal Stratificator(WorkGenerator workGenerator)
         {
             delicate = new ThreadShared(workGenerator);
@@ -67,6 +71,7 @@ namespace fastdee
             using var continuator = new Stratum.StratumContinuator(pumper.WriteAsync);
             var notificator = new Stratum.NotificationSystem();
             notificator.NewJobReceived += NewJobReceived;
+            notificator.DifficultyReceived += (_, ev) => OnDifficultyReceived(ev);
             pumper.GottaLine += (src, ev) =>
             {
                 var stuff = Newtonsoft.Json.JsonConvert.DeserializeObject<JsonRpc.Message>(ev.payload);
