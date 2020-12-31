@@ -2,7 +2,8 @@
 
 namespace fastdee
 {
-    class Args
+    [Verb("connect", isDefault: true, HelpText = "Perform real work by connecting to a pool.")]
+    class ConnectArgs
     {
         [Value(0, MetaName = "pool", MetaValue = "IP_OR_URI:PORT", Required = true, HelpText = "Pool server (stratum) endpoint.")]
         public string Pool { get; set; } = "";

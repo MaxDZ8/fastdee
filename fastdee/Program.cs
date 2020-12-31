@@ -10,12 +10,12 @@ namespace fastdee
     {
         static int Main(string[] args)
         {
-            return Parser.Default.ParseArguments<Args>(args).MapResult(
+            return Parser.Default.ParseArguments<ConnectArgs>(args).MapResult(
                 options => MainWithParsed(options),
                 _ => -1);
         }
 
-        static int MainWithParsed(Args options)
+        static int MainWithParsed(ConnectArgs options)
         {
             // Pool server needs some additional parsing while I grok the documentation and find out if the lib can parse for me.
             string poolurl;
