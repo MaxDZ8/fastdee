@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace fastdee
+namespace fastdee.Stratum
 {
     /// <summary>
     /// Everything required to produce a block header to hash.
     /// Some comes from the initial stratum subscription, most from the mining.notify updates.
     /// </summary>
-    public class WorkGenerator
+    public class HeaderGenerator
     {
         /// <summary>
         /// Given coinbase, generate the first merkle root. Some coins do it differently.
@@ -18,7 +18,7 @@ namespace fastdee
         byte[] extraNonceOne = Array.Empty<byte>();
         readonly PoolOps.CanonicalNonce2Roller nonce2 = new PoolOps.CanonicalNonce2Roller();
 
-        Stratum.Notification.NewJob? currently;
+        Notification.NewJob? currently;
 
         int nonce2Off;
         byte[] header = Array.Empty<byte>();
@@ -32,7 +32,7 @@ namespace fastdee
         public ReadOnlySpan<byte> Header => header;
         public bool Significative => currently != null;
 
-        public WorkGenerator(FromCoinbaseFunc initialMerkle)
+        public HeaderGenerator(FromCoinbaseFunc initialMerkle)
         {
             this.initialMerkle = initialMerkle;
         }
@@ -43,7 +43,7 @@ namespace fastdee
             if (4 != extraNonceTwoByteCount) throw new NotImplementedException("only supported nonce2 size is 4");
         }
 
-        public void NewJob(Stratum.Notification.NewJob job)
+        public void NewJob(Notification.NewJob job)
         {
             currently = job;
             nonce2Off = job.cbHead.Length + extraNonceOne.Length;

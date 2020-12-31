@@ -20,11 +20,11 @@ namespace fastdee.Stratum
             internal bool alive;
         }
         readonly Delicate careful = new Delicate();
-        readonly WorkGenerator workGenerator;
+        readonly HeaderGenerator workGenerator;
         readonly IDifficultyCalculation diffCalc;
         DifficultyTarget target = new DifficultyTarget();
 
-        internal Connector(WorkGenerator workGenerator, IDifficultyCalculation diffCalc)
+        internal Connector(HeaderGenerator workGenerator, IDifficultyCalculation diffCalc)
         {
             this.workGenerator = workGenerator;
             this.diffCalc = diffCalc;

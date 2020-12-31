@@ -3,9 +3,9 @@ using fastdee.Stratum.Notification;
 using System;
 using System.Linq;
 
-namespace fastdee.Tests
+namespace fastdee.Stratum.Tests
 {
-    public class WorkGeneratorTests
+    public class HeaderGeneratorTests
     {
         [Theory]
         [InlineData(
@@ -64,7 +64,7 @@ namespace fastdee.Tests
         )]
         public void MatchesGoldenCanonWithMerkles(byte[] expected, byte[] n1, ushort n2sz, ulong nonce2, string jobid, byte[] prevHash, byte[] trie, byte[] coinhead, byte[] cointail, byte[] version, byte[] nbits, byte[] ntime, bool clean, params byte[][] merkles)
         {
-            var uut = new WorkGenerator(fastdee.PoolOps.Merkles.SingleSha);
+            var uut = new HeaderGenerator(PoolOps.Merkles.SingleSha);
             var pack = new NewJob(jobid, version, trie, coinhead, cointail, nbits, ntime, clean);
             Array.Copy(prevHash, pack.prevBlock.blob, pack.prevBlock.blob.Length);
             pack.merkles.AddRange(merkles.Select(el => AsMerkle(el)));

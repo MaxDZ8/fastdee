@@ -36,7 +36,7 @@ namespace fastdee
             }
             var factors = ChooseDifficulties(options.Algorithm, options.DifficultyMultiplier);
             var difficultyCalculator = new LockingCurrentDifficulty(ChooseDiffMaker(options.Algorithm, factors));
-            var stratHelp = new Stratum.Connector(new WorkGenerator(initialMerkle), difficultyCalculator);
+            var stratHelp = new Stratum.Connector(new Stratum.HeaderGenerator(initialMerkle), difficultyCalculator);
             var stratum = new Stratificator(stratHelp);
             stratum.PumpForeverAsync(serverInfo).Wait(); // TODO: the other services
             return -2;
@@ -55,7 +55,7 @@ namespace fastdee
             return $"fastdee/{major}.{minor}.{patch}";
         }
 
-        static internal WorkGenerator.FromCoinbaseFunc? ChooseMerkleGenerator(string algo) => algo.ToLowerInvariant() switch
+        static internal Stratum.HeaderGenerator.FromCoinbaseFunc? ChooseMerkleGenerator(string algo) => algo.ToLowerInvariant() switch
         {
             "keccak" => (coinbase) => PoolOps.Merkles.SingleSha(coinbase),
             _ => null
