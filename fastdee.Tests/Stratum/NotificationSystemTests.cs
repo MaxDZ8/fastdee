@@ -88,7 +88,7 @@ namespace fastdee.Tests.Stratum
             var notifier = new NotificationSystem();
             var diff = 0.0;
             notifier.DifficultyReceived += (src, ev) => diff = ev.difficulty;
-            var methodName = fastdee.Stratum.Notification.SetDifficulty.CommandString;
+            var methodName = "mining.set_difficulty";
             var processed = notifier.Mangle(methodName, concrete);
 
             Assert.True(processed);
@@ -103,7 +103,7 @@ namespace fastdee.Tests.Stratum
             var notifier = new NotificationSystem();
             var diff = 0.0;
             notifier.DifficultyReceived += (src, ev) => diff = ev.difficulty;
-            var methodName = fastdee.Stratum.Notification.SetDifficulty.CommandString;
+            var methodName = "mining.set_difficulty";
             var processed = notifier.Mangle(methodName, concrete);
 
             Assert.True(processed);

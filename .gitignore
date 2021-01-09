@@ -5,3 +5,4 @@ fastdee.Tests/obj/
 fastdee.Tests/bin/
 fastdee/Properties/launchSettings.json
 /fastdee.Tests/TestResults/
+fastdee/captured-keccak.json

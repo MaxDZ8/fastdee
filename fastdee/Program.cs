@@ -6,16 +6,17 @@ using System.Runtime.CompilerServices;
 
 namespace fastdee
 {
-    class Program
+    partial class Program
     {
         static int Main(string[] args)
         {
-            return Parser.Default.ParseArguments<Args>(args).MapResult(
-                options => MainWithParsed(options),
+            return Parser.Default.ParseArguments<ConnectArgs, SimulateArgs>(args).MapResult(
+                (ConnectArgs options) => MainWithParsed(options),
+                (SimulateArgs options) => SimulateWithParsed(options),
                 _ => -1);
         }
 
-        static int MainWithParsed(Args options)
+        static int MainWithParsed(ConnectArgs options)
         {
             // Pool server needs some additional parsing while I grok the documentation and find out if the lib can parse for me.
             string poolurl;
@@ -28,19 +29,26 @@ namespace fastdee
             }
             var presentingAs = options.SubscribeAs ?? MyCanonicalSubscription();
             var serverInfo = new ServerConnectionInfo(poolurl, poolport, presentingAs, options.UserName, options.WorkerName, options.SillyPassword);
-            var initialMerkle = ChooseMerkleGenerator(options.Algorithm);
-            if (null == initialMerkle)
+            var stratHelp = InstantiateConnector(options.Algorithm, options.DifficultyMultiplier);
+            if (null == stratHelp)
             {
                 Console.Error.WriteLine($"Unsupported algorithm: {options.Algorithm}");
                 return -3;
             }
-            var factors = ChooseDifficulties(options.Algorithm, options.DifficultyMultiplier);
-            var difficultyCalculator = new LockingCurrentDifficulty(ChooseDiffMaker(options.Algorithm, factors));
-            var workGenerator = new WorkGenerator(initialMerkle);
-            var stratum = new Stratificator(workGenerator);
-            stratum.DifficultyReceived += (src, ev) => difficultyCalculator.Set(ev.difficulty);
+            var stratum = new Stratificator(stratHelp);
             stratum.PumpForeverAsync(serverInfo).Wait(); // TODO: the other services
             return -2;
+        }
+
+        static Stratum.Connector? InstantiateConnector(string algorithm, double? diffmul, ulong? n2off = null)
+        {
+            var initialMerkle = ChooseMerkleGenerator(algorithm);
+            if (null == initialMerkle) return null;
+            var factors = ChooseDifficulties(algorithm, diffmul);
+            var difficultyCalculator = new LockingCurrentDifficulty(ChooseDiffMaker(algorithm, factors));
+            var headerGen = new Stratum.HeaderGenerator(initialMerkle);
+            if (n2off.HasValue) headerGen.NextNonce(n2off.Value);
+            return new Stratum.Connector(headerGen, difficultyCalculator);
         }
 
         static string MyCanonicalSubscription()
@@ -56,7 +64,7 @@ namespace fastdee
             return $"fastdee/{major}.{minor}.{patch}";
         }
 
-        static internal WorkGenerator.FromCoinbaseFunc? ChooseMerkleGenerator(string algo) => algo.ToLowerInvariant() switch
+        static internal Stratum.HeaderGenerator.FromCoinbaseFunc? ChooseMerkleGenerator(string algo) => algo.ToLowerInvariant() switch
         {
             "keccak" => (coinbase) => PoolOps.Merkles.SingleSha(coinbase),
             _ => null
@@ -85,7 +93,7 @@ namespace fastdee
             _ => throw new NotImplementedException()
         };
 
-        internal static ICurrentDifficulty ChooseDiffMaker(string algo, DifficultyMultipliers mults) => algo.ToLowerInvariant() switch
+        internal static IDifficultyCalculation ChooseDiffMaker(string algo, DifficultyMultipliers mults) => algo.ToLowerInvariant() switch
             {
                 "keccak" => new BtcLikeDifficulty(mults.Stratum, mults.One),
                 _ => throw new NotImplementedException()

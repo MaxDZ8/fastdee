@@ -1,15 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace fastdee
+﻿namespace fastdee.Stratum
 {
     /// <summary>
-    /// State reported by <see cref="Stratificator.Status"/>.
+    /// Quickly assert the state of a connection to a server.
     /// </summary>
-    enum StratumState
+    enum ConnectionPhase
     {
         /// <summary>
         /// Just created. Program start. Nothing done so far.
@@ -28,6 +22,10 @@ namespace fastdee
         /// but rather go straight into notificating new work.
         /// </summary>
         Authorizing,
+        /// <summary>
+        /// Authorized, but no work got yet.
+        /// </summary>
+        Idle,
         /// <summary>
         /// Got a new job notification from server and ready to provide dispatch data to kernels.
         /// </summary>
