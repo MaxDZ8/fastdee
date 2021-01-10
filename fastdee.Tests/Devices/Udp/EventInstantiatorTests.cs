@@ -104,7 +104,6 @@ namespace fastdee.Tests.Devices.Udp
                 0xA0, 0xB1, 0xC2, 0xD3,
                 0x4E, 0x5F, 0x60, 0x71
             };
-            var magic = EventInstantiator.FoundNonce(bin);
             Assert.Throws<System.ArgumentException>(() => EventInstantiator.FoundNonce(bin));
         }
 
