@@ -1,4 +1,6 @@
-﻿namespace fastdee.Devices
+﻿using System.Collections.Generic;
+
+namespace fastdee.Devices
 {
     /// <summary>
     /// This is basically the reply to <see cref="WorkRequestEventArgs{A}"/>.
@@ -19,9 +21,9 @@
         /// <summary>
         /// Header to be sent, in the format requested by <see cref="WorkRequestEventArgs{A}.algoFormat"/>.
         /// </summary>
-        internal readonly byte[] header;
+        internal readonly IReadOnlyList<byte> header;
 
-        internal RequestedWork(uint wid, byte[] header)
+        internal RequestedWork(uint wid, IReadOnlyList<byte> header)
         {
             this.wid = wid;
             this.header = header;
