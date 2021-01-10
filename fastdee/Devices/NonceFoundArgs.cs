@@ -8,7 +8,7 @@
     /// There's no need to understand which device sends this, <see cref="workid"/> allows the orchestrator to
     /// reconstruct all the data.
     /// </remarks>
-    class NonceFoundEventArgs
+    class NonceFoundArgs
     {
         /// <summary>
         /// Work identifier the server gave us to identify the algorithm-header sent to me.
@@ -24,7 +24,7 @@
         /// </summary>
         internal readonly byte[]? hash;
 
-        public NonceFoundEventArgs(ulong workid, ulong increment, byte[]? hash)
+        public NonceFoundArgs(ulong workid, ulong increment, byte[]? hash)
         {
             this.workid = workid;
             this.increment = increment;
