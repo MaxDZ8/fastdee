@@ -54,25 +54,58 @@ namespace fastdee.Tests.Devices.Udp
         [Fact]
         public void GimmeWorkLoadsCorrectly()
         {
-            throw new System.NotImplementedException();
+            var bin = new byte[] {
+                (byte)fastdee.Devices.WireAlgoFormat.Keccak, // algo lo
+                0, // algo hi - big endian
+                0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF1 // nonce count, big endian
+            };
+            var pretending = Dummy;
+            var magic = EventInstantiator.GimmeWork(pretending, bin);
+            Assert.Same(pretending, magic.originator);
+            Assert.Equal(fastdee.Devices.WireAlgoFormat.Keccak, magic.algoFormat);
+            Assert.Equal(0xF1DEBC9A78563412ul, magic.reserve);
         }
 
         [Fact]
         public void GimmeWorkMustConsumeAll()
         {
-            throw new System.NotImplementedException();
+            var bin = new byte[] {
+                (byte)fastdee.Devices.WireAlgoFormat.Keccak, // algo lo
+                0, // algo hi - big endian
+                0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF1, // nonce count, big endian
+                0xFF
+            };
+            var pretending = Dummy;
+            Assert.Throws<System.ArgumentException>(() => EventInstantiator.GimmeWork(pretending, bin));
         }
 
         [Fact]
         public void FoundNonceLoadsCorrectly()
         {
-            throw new System.NotImplementedException();
+            var bin = new byte[] {
+                0x01, 0x23, 0x45, 0x67, // original workid, big endian
+                0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, // increment wrt original base-nonce
+                2, // this hash produces 2 uints (weird, but it's just a test) - max is 255 uints, unlikely but I guess 192 might be a thing.
+                0xA0, 0xB1, 0xC2, 0xD3,
+                0x4E, 0x5F, 0x60, 0x71 // the format of the hash is a function of the algorithm header format
+            };
+            var magic = EventInstantiator.FoundNonce( bin);
+            Assert.Equal(0x67452301u, magic.workid);
+            Assert.Equal(0x7766554433221100ul, magic.increment);
         }
 
         [Fact]
         public void FoundNonceMustConsumeAll()
         {
-            throw new System.NotImplementedException();
+            var bin = new byte[] {
+                0x01, 0x23, 0x45, 0x67,
+                0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
+                1, // one extra uint given
+                0xA0, 0xB1, 0xC2, 0xD3,
+                0x4E, 0x5F, 0x60, 0x71
+            };
+            var magic = EventInstantiator.FoundNonce(bin);
+            Assert.Throws<System.ArgumentException>(() => EventInstantiator.FoundNonce(bin));
         }
 
         static byte[] AsciiBlob(string ascii) => System.Text.Encoding.ASCII.GetBytes(ascii);
