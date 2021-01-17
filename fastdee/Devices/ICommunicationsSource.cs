@@ -18,10 +18,10 @@ namespace fastdee.Devices
         /// <summary>
         /// Reply with a <see cref="RequestedWork"/>.
         /// </summary>
-        event EventHandler<WorkRequestEventArgs<T>>? WorkAsked;
+        event EventHandler<WorkRequestArgs<T>>? WorkAsked;
         /// <summary>
         /// No reply required. The devices send those to the orchestrator a few times and they're done.
         /// </summary>
-        event EventHandler<NonceFoundEventArgs>? NonceFound;
+        event EventHandler<NonceFoundArgs>? NonceFound;
     }
 }

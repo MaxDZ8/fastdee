@@ -3,8 +3,8 @@
 namespace fastdee.Devices
 {
     /// <summary>
-    /// This is basically the reply to <see cref="WorkRequestEventArgs{A}"/>.
-    /// Quirk: <see cref="WorkRequestEventArgs{A}"/> has a more complex role, it also tells who asked for work,
+    /// This is basically the reply to <see cref="WorkRequestArgs{A}"/>.
+    /// Quirk: <see cref="WorkRequestArgs{A}"/> has a more complex role, it also tells who asked for work,
     /// by contrast, this is a pure payload to be given back.
     /// </summary>
     /// <remarks>
@@ -14,12 +14,12 @@ namespace fastdee.Devices
     class RequestedWork
     {
         /// <summary>
-        /// If the device finds a nonce, <see cref="NonceFoundEventArgs.workid"/> will have this value.
+        /// If the device finds a nonce, <see cref="NonceFoundArgs.workid"/> will have this value.
         /// By using this, the server knows the header, ntime, nonce2 and all the things.
         /// </summary>
         internal readonly uint wid;
         /// <summary>
-        /// Header to be sent, in the format requested by <see cref="WorkRequestEventArgs{A}.algoFormat"/>.
+        /// Header to be sent, in the format requested by <see cref="WorkRequestArgs{A}.algoFormat"/>.
         /// </summary>
         internal readonly IReadOnlyList<byte> header;
 

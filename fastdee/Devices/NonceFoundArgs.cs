@@ -12,8 +12,9 @@
     {
         /// <summary>
         /// Work identifier the server gave us to identify the algorithm-header sent to me.
+        /// <see cref="RequestedWork.wid"/>
         /// </summary>
-        internal readonly ulong workid;
+        internal readonly uint workid;
         /// <summary>
         /// The server knows the nonce base and has tracked it. How many nonces to add to find the match.
         /// </summary>
@@ -24,7 +25,7 @@
         /// </summary>
         internal readonly byte[]? hash;
 
-        public NonceFoundArgs(ulong workid, ulong increment, byte[]? hash)
+        public NonceFoundArgs(uint workid, ulong increment, byte[]? hash)
         {
             this.workid = workid;
             this.increment = increment;
