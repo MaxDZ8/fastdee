@@ -2,12 +2,13 @@
 using System.Collections.Generic;
 using fastdee.Stratum;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace fastdee
 {
     partial class Program
     {
-        static int SimulateWithParsed(SimulateArgs options)
+        static async Task<int> SimulateWithParsedAsync(SimulateArgs options)
         {
             string json;
             try

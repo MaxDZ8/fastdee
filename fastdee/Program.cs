@@ -2,21 +2,23 @@
 using CommandLine;
 
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
+
 [assembly: InternalsVisibleTo("fastdee.Tests")]
 
 namespace fastdee
 {
     partial class Program
     {
-        static int Main(string[] args)
+        static async Task<int> Main(string[] args)
         {
-            return Parser.Default.ParseArguments<ConnectArgs, SimulateArgs>(args).MapResult(
-                (ConnectArgs options) => MainWithParsed(options),
-                (SimulateArgs options) => SimulateWithParsed(options),
-                _ => -1);
+            return await Parser.Default.ParseArguments<ConnectArgs, SimulateArgs>(args).MapResult(
+                (ConnectArgs options) => MainWithParsedAsync(options),
+                (SimulateArgs options) => SimulateWithParsedAsync(options),
+                _ => Task.FromResult(-1));
         }
 
-        static int MainWithParsed(ConnectArgs options)
+        static async Task<int> MainWithParsedAsync(ConnectArgs options)
         {
             // Pool server needs some additional parsing while I grok the documentation and find out if the lib can parse for me.
             string poolurl;
