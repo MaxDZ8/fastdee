@@ -60,7 +60,7 @@ namespace fastdee.Devices.Udp
         internal async Task ReceiveForever()
         {
             var buffer = new byte[4096]; // TODO: in line of theory I should support packets bigger than that. But I don't.
-            var originator = new IPEndPoint(IPAddress.Any, 12345);
+            var originator = new IPEndPoint(0, 0);
             while (false == cancel.IsCancellationRequested)
             {
                 try
@@ -79,7 +79,8 @@ namespace fastdee.Devices.Udp
 
         void Process(Span<byte> octects, SocketReceiveMessageFromResult msg)
         {
-            if (octects.Length < 1) return; // I have no command type to parse... uh!
+            if (msg.ReceivedBytes < 1) return; // I have no command type to parse... uh!
+            octects = octects[..msg.ReceivedBytes];
             if (msg.RemoteEndPoint is not IPEndPoint originator)
             {
                 // todo. I don't like this at all.

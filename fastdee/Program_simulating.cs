@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using fastdee.Stratum;
 using System.IO;
 using System.Threading.Tasks;
+using System.Net;
+using System.Net.Sockets;
 
 namespace fastdee
 {
@@ -48,8 +50,28 @@ namespace fastdee
             stratHelp.Authorized(true);
             stratHelp.StartNewJob(notifyJob);
             stratHelp.SetDifficulty(shareDiff);
-            // STUB: really doing nothing for the time being.
+            using var cts = new System.Threading.CancellationTokenSource();
+            using var udpSock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            try
+            {
+                udpSock.Bind(new IPEndPoint(IPAddress.Any, 18458));
+            }
+            catch (SocketException ex)
+            {
+                Console.Error.WriteLine($"Failed to setup socket, OS error: {ex.ErrorCode}");
+                throw;
+            }
+            var embeddedServer = new Devices.Udp.DatagramPump(udpSock, cts.Token);
+            embeddedServer.IntroducedItself += NewDeviceOnline;
+            await embeddedServer.ReceiveForever();
             return 0;
+        }
+
+        private static void NewDeviceOnline(object? sender, Devices.TurnOnArgs<IPEndPoint> e)
+        {
+            Console.WriteLine($"New device online: {e.originator.Address}:{e.originator.Port}");
+            Console.WriteLine($"Model common: {BitConverter.ToString(e.identificator)}");
+            Console.WriteLine($"Device-specific: {BitConverter.ToString(e.deviceSpecific)}");
         }
 
         static Stratum.Response.MiningSubscribe MakeSubscribe(ReplicationData.Subscribe repl)
