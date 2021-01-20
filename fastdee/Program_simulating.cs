@@ -5,6 +5,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
+using fastdee.Devices.Udp;
 
 namespace fastdee
 {
@@ -61,15 +62,27 @@ namespace fastdee
                 Console.Error.WriteLine($"Failed to setup socket, OS error: {ex.ErrorCode}");
                 throw;
             }
-            var embeddedServer = new Devices.Udp.DatagramPump(udpSock, cts.Token);
-            embeddedServer.IntroducedItself += NewDeviceOnline;
+            var embeddedServer = new DatagramPump(udpSock, cts.Token);
+            var replificator = new ReplyMaker();
+            embeddedServer.IntroducedItself += (src, ev) =>
+            {
+                var myAddr = ReplyMaker.ResolveMyIpForDevice(ev.originator);
+                if (null != myAddr)
+                {
+                    var blob = replificator.Reply(myAddr, ev.identificator, ev.deviceSpecific);
+                    if (null == blob) return;
+                    lock (udpSock) udpSock.SendTo(blob, ev.originator); // 
+                    NewDeviceOnline(ev, myAddr);
+                }
+            };
             await embeddedServer.ReceiveForever();
             return 0;
         }
 
-        private static void NewDeviceOnline(object? sender, Devices.TurnOnArgs<IPEndPoint> e)
+        private static void NewDeviceOnline(Devices.TurnOnArgs<IPEndPoint> e, IPAddress myAddr)
         {
             Console.WriteLine($"New device online: {e.originator.Address}:{e.originator.Port}");
+            Console.WriteLine($"It can contact me at IP: {myAddr}");
             Console.WriteLine($"Model common: {BitConverter.ToString(e.identificator)}");
             Console.WriteLine($"Device-specific: {BitConverter.ToString(e.deviceSpecific)}");
         }
