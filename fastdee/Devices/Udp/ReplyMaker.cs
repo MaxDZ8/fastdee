@@ -86,6 +86,18 @@ namespace fastdee.Devices.Udp
             return blob;
         }
 
+        /// <summary>
+        /// Serialize a work unit so it goes over the wire to a device.
+        /// The structure must be common to all devices and algorithm implementations but the header can really be
+        /// arbitrary payload as long as it's in the format the device expects.
+        /// </summary>
+        /// <param name="work">The work unit to provide. If you want to leave the device idle don't call me.</param>
+        /// <returns>Opaque blob to send back to device.</returns>
+        internal byte[] YourWork(RequestedWork work)
+        {
+            throw new NotImplementedException();
+        }
+
 
         /// <summary>
         /// Convenience.

@@ -19,6 +19,7 @@ namespace fastdee.Devices.Udp
     /// </summary>
     enum OutgoingKind
     {
-        ServerAddress = 0
+        ServerAddress = 0,
+        WorkUnit
     }
 }

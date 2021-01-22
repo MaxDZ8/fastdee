@@ -22,11 +22,19 @@ namespace fastdee.Devices
         /// Header to be sent, in the format requested by <see cref="WorkRequestArgs{A}.algoFormat"/>.
         /// </summary>
         internal readonly IReadOnlyList<byte> header;
+        /// <summary>
+        /// I initially considered having the hardware work at constant difficulty
+        /// but it is just convenient to have it programmable.
+        /// I'm not totally sure how it is supposed to go by but for the time being I'll stick with 64-bit.
+        /// Those are usually from the lowest bits of the target.
+        /// </summary>
+        internal readonly ulong diffThreshold;
 
-        internal RequestedWork(uint wid, IReadOnlyList<byte> header)
+        internal RequestedWork(uint wid, IReadOnlyList<byte> header, ulong diffThreshold)
         {
             this.wid = wid;
             this.header = header;
+            this.diffThreshold = diffThreshold;
         }
     }
 }

@@ -28,5 +28,18 @@ namespace fastdee.Tests.Devices.Udp
             easy.AddRange(addrBytes);
             Assert.Equal(easy, reply); // the reply is merely for bytes being the ipv4 address.
         }
+
+        [Fact]
+        public void CanGiveWork()
+        {
+            var pseudoHeader = new byte[] { 128, 129, 130, 131 }; // arbitrary, assumed coherent with requested algorithm format
+            var work = new fastdee.Devices.RequestedWork(0x11223344, pseudoHeader, 0xABCDEF01_23456789);
+            var magic = new ReplyMaker();
+            var reply = magic.YourWork(work); // no questions asked!
+            var easy = new List<byte>() { (byte)OutgoingKind.WorkUnit, 0x44, 0x33, 0x22, 0x11 }; // packet kind, work id...
+            easy.AddRange(pseudoHeader);
+            easy.AddRange(new byte[] { 0x89, 0x67, 0x45, 0x23, 0x01, 0xEF, 0xCD, 0xAB }); // difficulty threshold
+            Assert.Equal(easy, reply);
+        }
     }
 }
