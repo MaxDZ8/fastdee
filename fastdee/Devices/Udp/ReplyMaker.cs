@@ -75,7 +75,7 @@ namespace fastdee.Devices.Udp
         /// Blob to send over the wire. I won't touch it anymore. If I don't want to deal with this device
         /// (maybe it belongs to another server) I will return null and you send nothing to it.
         /// </returns>
-        internal byte[]? Reply(IPAddress reachme, byte[] identificator, byte[] deviceSpecific)
+        internal byte[]? Welcome(IPAddress reachme, byte[] identificator, byte[] deviceSpecific)
         {
             var addrBlob = reachme.GetAddressBytes();
             var blob = new byte[1 + 1 + addrBlob.Length];

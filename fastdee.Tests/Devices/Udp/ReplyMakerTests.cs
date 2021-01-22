@@ -22,7 +22,7 @@ namespace fastdee.Tests.Devices.Udp
             var modelCommon = new byte[] { 0, 1, 2, 3 }; // the arguments are irrelevant as well for the time being.
             var deviceSpecific = new byte[] { 123, 101, 202 };
             var magic = new ReplyMaker();
-            var reply = magic.Reply(ipaddr, modelCommon, deviceSpecific);
+            var reply = magic.Welcome(ipaddr, modelCommon, deviceSpecific);
             // For the time being, the reply is always the same. Outgoing packet kind, flags to zero, IP address of the server.
             var easy = new List<byte>() { (byte)OutgoingKind.ServerAddress, 0 };
             easy.AddRange(addrBytes);

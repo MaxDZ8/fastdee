@@ -69,9 +69,9 @@ namespace fastdee
                 var myAddr = ReplyMaker.ResolveMyIpForDevice(ev.originator);
                 if (null != myAddr)
                 {
-                    var blob = replificator.Reply(myAddr, ev.identificator, ev.deviceSpecific);
+                    var blob = replificator.Welcome(myAddr, ev.identificator, ev.deviceSpecific);
                     if (null == blob) return;
-                    lock (udpSock) udpSock.SendTo(blob, ev.originator); // 
+                    lock (udpSock) udpSock.SendTo(blob, ev.originator);
                     NewDeviceOnline(ev, myAddr);
                 }
             };
