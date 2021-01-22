@@ -63,13 +63,12 @@ namespace fastdee
                 throw;
             }
             var embeddedServer = new DatagramPump(udpSock, cts.Token);
-            var replificator = new ReplyMaker();
             embeddedServer.IntroducedItself += (src, ev) =>
             {
                 var myAddr = ReplyMaker.ResolveMyIpForDevice(ev.originator);
                 if (null != myAddr)
                 {
-                    var blob = replificator.Welcome(myAddr, ev.identificator, ev.deviceSpecific);
+                    var blob = ReplyMaker.Welcome(myAddr, ev.identificator, ev.deviceSpecific);
                     if (null == blob) return;
                     lock (udpSock) udpSock.SendTo(blob, ev.originator);
                     NewDeviceOnline(ev, myAddr);

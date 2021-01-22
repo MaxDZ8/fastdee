@@ -21,8 +21,7 @@ namespace fastdee.Tests.Devices.Udp
             var ipaddr = IPAddress.Parse(serverAddr);
             var modelCommon = new byte[] { 0, 1, 2, 3 }; // the arguments are irrelevant as well for the time being.
             var deviceSpecific = new byte[] { 123, 101, 202 };
-            var magic = new ReplyMaker();
-            var reply = magic.Welcome(ipaddr, modelCommon, deviceSpecific);
+            var reply = ReplyMaker.Welcome(ipaddr, modelCommon, deviceSpecific);
             // For the time being, the reply is always the same. Outgoing packet kind, flags to zero, IP address of the server.
             var easy = new List<byte>() { (byte)OutgoingKind.ServerAddress, 0 };
             easy.AddRange(addrBytes);
@@ -34,8 +33,7 @@ namespace fastdee.Tests.Devices.Udp
         {
             var pseudoHeader = new byte[] { 128, 129, 130, 131 }; // arbitrary, assumed coherent with requested algorithm format
             var work = new fastdee.Devices.RequestedWork(0x11223344, pseudoHeader, 0xABCDEF01_23456789);
-            var magic = new ReplyMaker();
-            var reply = magic.YourWork(work); // no questions asked!
+            var reply = ReplyMaker.YourWork(work); // no questions asked!
             var easy = new List<byte>() { (byte)OutgoingKind.WorkUnit, 0x44, 0x33, 0x22, 0x11 }; // packet kind, work id...
             easy.AddRange(pseudoHeader);
             easy.AddRange(new byte[] { 0x89, 0x67, 0x45, 0x23, 0x01, 0xEF, 0xCD, 0xAB }); // difficulty threshold

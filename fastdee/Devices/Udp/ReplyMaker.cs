@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 
 namespace fastdee.Devices.Udp
@@ -8,7 +9,7 @@ namespace fastdee.Devices.Udp
     /// The <see cref="ReplyMaker"/> is in some way the opposite, but slightly scaled up.
     /// It takes care of both building the reply and serializing it to a blob you send over the wire.
     /// </summary>
-    class ReplyMaker
+    static class ReplyMaker
     {
         /// <summary>
         /// Building a reply is all fine and dandy but while we know who talked to us, we don't know what address
@@ -75,7 +76,7 @@ namespace fastdee.Devices.Udp
         /// Blob to send over the wire. I won't touch it anymore. If I don't want to deal with this device
         /// (maybe it belongs to another server) I will return null and you send nothing to it.
         /// </returns>
-        internal byte[]? Welcome(IPAddress reachme, byte[] identificator, byte[] deviceSpecific)
+        static internal byte[]? Welcome(IPAddress reachme, byte[] identificator, byte[] deviceSpecific)
         {
             var addrBlob = reachme.GetAddressBytes();
             var blob = new byte[1 + 1 + addrBlob.Length];
@@ -93,9 +94,15 @@ namespace fastdee.Devices.Udp
         /// </summary>
         /// <param name="work">The work unit to provide. If you want to leave the device idle don't call me.</param>
         /// <returns>Opaque blob to send back to device.</returns>
-        internal byte[] YourWork(RequestedWork work)
+        static internal byte[] YourWork(RequestedWork work)
         {
-            throw new NotImplementedException();
+            var blob = new byte[1 + 4 + work.header.Count + 8]; // pkt_kind, wid, payload, diff_threshold_low
+            var store = StoreKind(blob, OutgoingKind.WorkUnit);
+            store = StoreUint(store, work.wid);
+            store = StoreByteList(store, work.header);
+            store = StoreUlong(store, work.diffThreshold);
+            ThrowIfNotFullyConsumed(store);
+            return blob;
         }
 
 
@@ -114,6 +121,31 @@ namespace fastdee.Devices.Udp
         {
             for (var cp = 0; cp < value.Length; cp++) buff[cp] = value[cp];
             return buff[value.Length..];
+        }
+
+        // TODO: maybe just IEnumerable?
+        static Span<byte> StoreByteList(Span<byte> buff, IReadOnlyList<byte> value)
+        {
+            for (var cp = 0; cp < value.Count; cp++) buff[cp] = value[cp];
+            return buff[value.Count..];
+        }
+
+        static Span<byte> StoreUint(Span<byte> buff, uint value)
+        {
+            buff[0] = (byte)(value);
+            buff[1] = (byte)(value >> 8);
+            buff[2] = (byte)(value >> 16);
+            buff[3] = (byte)(value >> 24);
+            return buff[4..];
+        }
+
+        static Span<byte> StoreUlong(Span<byte> buff, ulong value)
+        {
+            var hi = (uint)(value >> 32);
+            var lo = (uint)(value);
+            buff = StoreUint(buff, lo);
+            buff = StoreUint(buff, hi);
+            return buff;
         }
 
         static void ThrowIfNotFullyConsumed(Span<byte> buff)
