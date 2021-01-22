@@ -63,6 +63,7 @@ namespace fastdee
                 throw;
             }
             var embeddedServer = new DatagramPump(udpSock, cts.Token);
+            var tracker = new Devices.Tracker<IPEndPoint>(stratHelp.GenWork);
             embeddedServer.IntroducedItself += (src, ev) =>
             {
                 var myAddr = ReplyMaker.ResolveMyIpForDevice(ev.originator);
@@ -73,6 +74,21 @@ namespace fastdee
                     lock (udpSock) udpSock.SendTo(blob, ev.originator);
                     NewDeviceOnline(ev, myAddr);
                 }
+            };
+            embeddedServer.WorkAsked += (src, ev) =>
+            {
+                if (ev.algoFormat != Devices.WireAlgoFormat.Keccak) return; // the idea is each fastdee instance runs a single algo
+                var workUnit = tracker.ConsumeNonces(ev.originator, ev.scanCount);
+                if (null == workUnit) return;
+                /* ^ The device will keep asking and it'll be quite noisy.
+                 * All things considered I have decided this is the right approach because such traffic which gets increasingly common
+                 * can be an indicator of something going awry. So, for the time being there's no "no work" reply. 
+                 * Note idle devices over time will be more and more noisy and eventually reboot, going into discovery,
+                 * that's even worse but when stuff breaks I want it to break big way.
+                 */
+                var blob = ReplyMaker.YourWork(workUnit);
+                lock (udpSock) udpSock.SendTo(blob, ev.originator);
+                Console.WriteLine($"Gave {ev.originator.Address}:{ev.originator.Port} work unit {workUnit.wid}");
             };
             await embeddedServer.ReceiveForever();
             return 0;

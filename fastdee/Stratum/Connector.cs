@@ -1,11 +1,14 @@
 ﻿using fastdee.Stratum.Notification;
 using fastdee.Stratum.Response;
 using System;
+using System.Linq; // .ToList()
 
 namespace fastdee.Stratum
 {
     /// <summary>
     /// Collect stimuli from the stratum recoverable pump and turn them in something we can consume easily.
+    /// 
+    /// I initially wanted to just bind all the things toghether but doing something more is too tempting!
     /// </summary>
     class Connector : ICallbacks
     {
@@ -18,16 +21,21 @@ namespace fastdee.Stratum
             /// then we can be more aggressive if connection fails.
             /// </summary>
             internal bool alive;
-        }
-        readonly Delicate careful = new Delicate();
-        readonly HeaderGenerator workGenerator;
-        readonly IDifficultyCalculation diffCalc;
-        DifficultyTarget target = new DifficultyTarget();
+            internal readonly WorkGenerator workMaker = new WorkGenerator();
+            internal readonly HeaderGenerator headerGenerator;
+            internal readonly IDifficultyCalculation diffCalc;
 
-        internal Connector(HeaderGenerator workGenerator, IDifficultyCalculation diffCalc)
+            public Delicate(HeaderGenerator headerGenerator, IDifficultyCalculation diffCalc)
+            {
+                this.headerGenerator = headerGenerator;
+                this.diffCalc = diffCalc;
+            }
+        }
+        readonly Delicate careful;
+
+        internal Connector(HeaderGenerator headerMaker, IDifficultyCalculation diffCalc)
         {
-            this.workGenerator = workGenerator;
-            this.diffCalc = diffCalc;
+            careful = new Delicate(headerMaker, diffCalc);
         }
 
         public void Connecting()
@@ -46,7 +54,7 @@ namespace fastdee.Stratum
             {
                 careful.alive = true;
                 careful.phase = ConnectionPhase.Authorizing;
-                workGenerator.NonceSettings(reply.extraNonceOne, reply.extraNonceTwoByteCount);
+                careful.headerGenerator.NonceSettings(reply.extraNonceOne, reply.extraNonceTwoByteCount);
             }
         }
 
@@ -68,20 +76,33 @@ namespace fastdee.Stratum
         {
             lock (careful)
             {
-                diffCalc.Set(newDiff);
-                target = diffCalc.DifficultyTarget;
+                careful.diffCalc.Set(newDiff);
+                careful.workMaker.SetTarget(careful.diffCalc.DifficultyTarget);
             }
         }
 
-        public void StartNewJob(NewJob newJob)
+        public void StartNewJob(NewJob job)
         {
-            Console.WriteLine($"OK Job={newJob.jobid}, flushing={newJob.flush}");
+            Console.WriteLine($"OK Job={job.jobid}, flushing={job.flush}");
             lock (careful)
             {
-                workGenerator.NewJob(newJob);
+                careful.headerGenerator.NewJob(job);
                 careful.phase = ConnectionPhase.GotWork;
+                var nonce2 = careful.headerGenerator.CopyNonce2();
+                var tracking = new ShareSubmitInfo(job.jobid, nonce2, job.ntime);
+                var persist = careful.headerGenerator.Header.ToArray();
+                careful.workMaker.SetHeader(tracking, persist);
             }
 
+        }
+
+        internal Work? GenWork(ulong nonceRange)
+        {
+            lock (careful)
+            {
+                if (careful.phase != ConnectionPhase.GotWork) return null;
+                return careful.workMaker.WannaConsume(nonceRange); // TODO: seems like a good place for n2 roll
+            }
         }
 
         public void Failed()
@@ -89,7 +110,7 @@ namespace fastdee.Stratum
             lock (careful)
             {
                 careful.phase = ConnectionPhase.Failed;
-                workGenerator.Stop();
+                careful.headerGenerator.Stop();
             }
         }
     }

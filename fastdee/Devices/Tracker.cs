@@ -13,10 +13,10 @@ namespace fastdee.Devices
     /// And I also need to associate the new dispatched header to the original so I can recostruct the data,
     /// all this is better done in a single place.
     /// </summary>
-    /// <typeparam name="T">Tipo indirizzo dei dispositivi gestiti.</typeparam>
+    /// <typeparam name="T">Unique "address" of the worker in the network.</typeparam>
     class Tracker<T> where T : notnull
     {
-        readonly Func<ulong, Work> genWork;
+        readonly Func<ulong, Work?> genWork;
         /// <summary>
         /// As always, this is going to be locked because I'm not sure I don't want group operations in the future.
         /// </summary>
@@ -30,8 +30,9 @@ namespace fastdee.Devices
         /// <param name="genWork">
         /// Work generation callback. That's ideally <see cref="WorkGenerator.WannaConsume(ulong)"/> but that function is
         /// inappropriate as 1- does not roll nonce2 2- con throw if exhausted, and other bad things.
+        /// The function can return null when no work is to be given - the device will go idle.
         /// </param>
-        public Tracker(Func<ulong, Work> genWork)
+        public Tracker(Func<ulong, Work?> genWork)
         {
             this.genWork = genWork;
         }
@@ -55,7 +56,8 @@ namespace fastdee.Devices
         /// I also don't care about header format, as long as the dependancy from the work generator is there
         /// I'm happy with it.
         /// </summary>
-        internal RequestedWork ConsumeNonces(T originator, ulong scanCount)
+        /// <returns>Null if no work available to be given.</returns>
+        internal RequestedWork? ConsumeNonces(T originator, ulong scanCount)
         {
             var devInfo = GetCurrently(originator);
             RequestedWork cooked;
@@ -63,8 +65,9 @@ namespace fastdee.Devices
             lock (devInfo)
             {
                 var work = genWork(scanCount);
+                if (null == work) return null;
                 var wid = (uint)work.uniq; // We hope to never have 2^32 work dispatch in flight!
-                cooked = new RequestedWork(wid, work.header);
+                cooked = new RequestedWork(wid, work.header, work.target.TargD);
                 var dispatching = new Dispatched(work, cooked);
                 if (devInfo.dispatched != null) prev = devInfo.dispatched.provide.wid;
                 devInfo.Working(dispatching);
