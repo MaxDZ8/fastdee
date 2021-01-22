@@ -9,13 +9,13 @@
     {
         public readonly A originator;
         public readonly WireAlgoFormat algoFormat;
-        public readonly ulong reserve;
+        public readonly ulong scanCount;
 
         public WorkRequestArgs(A originator, WireAlgoFormat algoFormat, ulong reserve)
         {
             this.originator = originator;
             this.algoFormat = algoFormat;
-            this.reserve = reserve;
+            this.scanCount = reserve;
         }
     }
 }

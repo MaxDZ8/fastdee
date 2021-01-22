@@ -63,7 +63,7 @@ namespace fastdee.Tests.Devices.Udp
             var magic = EventInstantiator.GimmeWork(pretending, bin);
             Assert.Same(pretending, magic.originator);
             Assert.Equal(fastdee.Devices.WireAlgoFormat.Keccak, magic.algoFormat);
-            Assert.Equal(0xF1DEBC9A78563412ul, magic.reserve);
+            Assert.Equal(0xF1DEBC9A78563412ul, magic.scanCount);
         }
 
         [Fact]
