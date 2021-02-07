@@ -30,11 +30,18 @@ namespace fastdee.Devices
         /// </summary>
         internal readonly ulong diffThreshold;
 
-        internal RequestedWork(uint wid, IReadOnlyList<byte> header, ulong diffThreshold)
+        /// <summary>
+        /// A bit redundant with the information in <see cref="Stratum.Work.nonceBase"/> but it simplifies
+        /// life of device adapters considerably.
+        /// </summary>
+        internal readonly ulong nonceBase;
+
+        internal RequestedWork(uint wid, IReadOnlyList<byte> header, ulong diffThreshold, ulong nonceBase)
         {
             this.wid = wid;
             this.header = header;
             this.diffThreshold = diffThreshold;
+            this.nonceBase = nonceBase;
         }
     }
 }

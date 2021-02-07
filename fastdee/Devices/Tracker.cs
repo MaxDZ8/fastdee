@@ -67,7 +67,7 @@ namespace fastdee.Devices
                 var work = genWork(scanCount);
                 if (null == work) return null;
                 var wid = (uint)work.uniq; // We hope to never have 2^32 work dispatch in flight!
-                cooked = new RequestedWork(wid, work.header, work.target.TargD);
+                cooked = new RequestedWork(wid, work.header, work.target.TargD, work.nonceBase);
                 var dispatching = new Dispatched(work, cooked);
                 if (devInfo.dispatched != null) prev = devInfo.dispatched.provide.wid;
                 devInfo.Working(dispatching);
