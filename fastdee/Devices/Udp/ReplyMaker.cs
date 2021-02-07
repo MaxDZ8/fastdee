@@ -80,9 +80,9 @@ namespace fastdee.Devices.Udp
         {
             var addrBlob = reachme.GetAddressBytes();
             var blob = new byte[1 + 1 + addrBlob.Length];
-            var store = StoreKind(blob, OutgoingKind.ServerAddress);
-            store = StoreByte(store, 0); // this is really a bitflag of features. For the time being it must be zero so no big deal
-            store = StoreByteArray(store, addrBlob);
+            var store = StoreOps.StoreKind(blob, OutgoingKind.ServerAddress);
+            store = StoreOps.StoreByte(store, 0); // this is really a bitflag of features. For the time being it must be zero so no big deal
+            store = StoreOps.StoreByteArray(store, addrBlob);
             ThrowIfNotFullyConsumed(store);
             return blob;
         }
@@ -91,61 +91,17 @@ namespace fastdee.Devices.Udp
         /// Serialize a work unit so it goes over the wire to a device.
         /// The structure must be common to all devices and algorithm implementations but the header can really be
         /// arbitrary payload as long as it's in the format the device expects.
+        /// Each algorithm implementation takes a different payload so this can't just consume a <see cref="RequestedWork"/>.
         /// </summary>
-        /// <param name="work">The work unit to provide. If you want to leave the device idle don't call me.</param>
         /// <returns>Opaque blob to send back to device.</returns>
-        static internal byte[] YourWork(RequestedWork work)
+        static internal byte[] YourWork(uint wid, IReadOnlyList<byte> payload)
         {
-            var blob = new byte[1 + 4 + work.header.Count + 8]; // pkt_kind, wid, payload, diff_threshold_low
-            var store = StoreKind(blob, OutgoingKind.WorkUnit);
-            store = StoreUint(store, work.wid);
-            store = StoreByteList(store, work.header);
-            store = StoreUlong(store, work.diffThreshold);
+            var blob = new byte[1 + 4 + payload.Count];
+            var store = StoreOps.StoreKind(blob, OutgoingKind.WorkUnit);
+            store = StoreOps.StoreUint(store, wid);
+            store = StoreOps.StoreByteList(store, payload);
             ThrowIfNotFullyConsumed(store);
             return blob;
-        }
-
-
-        /// <summary>
-        /// Convenience.
-        /// </summary>
-        static Span<byte> StoreKind(Span<byte> buff, OutgoingKind kind) => StoreByte(buff, (byte)kind);
-
-        static Span<byte> StoreByte(Span<byte> buff, byte value)
-        {
-            buff[0] = value;
-            return buff[1..];
-        }
-
-        static Span<byte> StoreByteArray(Span<byte> buff, ReadOnlySpan<byte> value)
-        {
-            for (var cp = 0; cp < value.Length; cp++) buff[cp] = value[cp];
-            return buff[value.Length..];
-        }
-
-        // TODO: maybe just IEnumerable?
-        static Span<byte> StoreByteList(Span<byte> buff, IReadOnlyList<byte> value)
-        {
-            for (var cp = 0; cp < value.Count; cp++) buff[cp] = value[cp];
-            return buff[value.Count..];
-        }
-
-        static Span<byte> StoreUint(Span<byte> buff, uint value)
-        {
-            buff[0] = (byte)(value);
-            buff[1] = (byte)(value >> 8);
-            buff[2] = (byte)(value >> 16);
-            buff[3] = (byte)(value >> 24);
-            return buff[4..];
-        }
-
-        static Span<byte> StoreUlong(Span<byte> buff, ulong value)
-        {
-            var hi = (uint)(value >> 32);
-            var lo = (uint)(value);
-            buff = StoreUint(buff, lo);
-            buff = StoreUint(buff, hi);
-            return buff;
         }
 
         static void ThrowIfNotFullyConsumed(Span<byte> buff)
