@@ -86,7 +86,8 @@ namespace fastdee
                  * Note idle devices over time will be more and more noisy and eventually reboot, going into discovery,
                  * that's even worse but when stuff breaks I want it to break big way.
                  */
-                var blob = ReplyMaker.YourWork(workUnit);
+                var payload = PayloadCooker.CookedPayload(workUnit, Devices.WireAlgoFormat.Keccak);
+                var blob = ReplyMaker.YourWork(workUnit.wid, payload);
                 lock (udpSock) udpSock.SendTo(blob, ev.originator);
                 Console.WriteLine($"Gave {ev.originator.Address}:{ev.originator.Port} work unit {workUnit.wid}");
             };

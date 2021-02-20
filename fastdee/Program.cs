@@ -100,6 +100,5 @@ namespace fastdee
                 "keccak" => new BtcLikeDifficulty(mults.Stratum, mults.One),
                 _ => throw new NotImplementedException()
             };
-        
     }
 }
