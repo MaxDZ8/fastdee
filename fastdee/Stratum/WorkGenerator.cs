@@ -32,6 +32,8 @@ namespace fastdee.Stratum
 
         public ulong ConsumedNonces { get; private set; }
 
+        public void NextNonce(ulong value) { ConsumedNonces = value; }
+
         internal void SetHeader(ShareSubmitInfo tracking, IReadOnlyList<byte> hdr)
         {
             bool changed;
