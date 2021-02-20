@@ -25,7 +25,7 @@ namespace fastdee
                 return -3;
             }
             var load = Newtonsoft.Json.JsonConvert.DeserializeObject<ReplicationData>(json);
-            var stratHelp = InstantiateConnector(load.algo, null, load.nonce2off);
+            var stratHelp = InstantiateConnector(load.algo, null, load.nonce2off, load.nonceStart);
             if (null == stratHelp)
             {
                 Console.Error.WriteLine($"Unsupported algorithm: {load.algo}");
@@ -51,6 +51,7 @@ namespace fastdee
             stratHelp.Authorized(true);
             stratHelp.StartNewJob(notifyJob);
             stratHelp.SetDifficulty(shareDiff);
+            stratHelp.StartingNonce(load.nonceStart);
             using var cts = new System.Threading.CancellationTokenSource();
             using var udpSock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             try
@@ -89,7 +90,7 @@ namespace fastdee
                 var payload = PayloadCooker.CookedPayload(workUnit, Devices.WireAlgoFormat.Keccak);
                 var blob = ReplyMaker.YourWork(workUnit.wid, payload);
                 lock (udpSock) udpSock.SendTo(blob, ev.originator);
-                Console.WriteLine($"Gave {ev.originator.Address}:{ev.originator.Port} work unit {workUnit.wid}");
+                Console.WriteLine($"Gave {ev.originator.Address}:{ev.originator.Port} work unit {workUnit.wid}, scanning from {workUnit.nonceBase}, {ev.scanCount}");
             };
             await embeddedServer.ReceiveForever();
             return 0;

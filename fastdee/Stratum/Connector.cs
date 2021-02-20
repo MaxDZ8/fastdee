@@ -38,6 +38,11 @@ namespace fastdee.Stratum
             careful = new Delicate(headerMaker, diffCalc);
         }
 
+        public void StartingNonce(ulong nonceStart)
+        {
+            lock (careful) careful.workMaker.NextNonce(nonceStart);
+        }
+
         public void Connecting()
         {
             lock (careful) careful.phase = ConnectionPhase.Connecting;

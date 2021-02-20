@@ -42,7 +42,7 @@ namespace fastdee
             return -2;
         }
 
-        static Stratum.Connector? InstantiateConnector(string algorithm, double? diffmul, ulong? n2off = null)
+        static Stratum.Connector? InstantiateConnector(string algorithm, double? diffmul, ulong? n2off = null, ulong nonceStart = 0)
         {
             var initialMerkle = ChooseMerkleGenerator(algorithm);
             if (null == initialMerkle) return null;
