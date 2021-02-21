@@ -127,6 +127,14 @@ namespace fastdee.Stratum.Tests
             Assert.False(uut.Empty);
         }
 
+        [Fact]
+        public void CanSetStartingNonce()
+        {
+            var uut = new WorkGenerator();
+            uut.NextNonce(0x12345678_9ABCDEF0u);
+            Assert.Equal(0x123456789ABCDEF0u, uut.ConsumedNonces);
+        }
+
         static ShareSubmitInfo DummySubmit => new ShareSubmitInfo("ueht", new byte[] { 1, 2, 3, 4 }, new byte[] { 0, 1, 23, 45 });
     }
 }

@@ -116,5 +116,12 @@ namespace fastdee.Stratum
         }
 
         internal void NextNonce(ulong n) => nonce2.NextNonce(n);
+
+        internal byte[] CopyNonce2()
+        {
+            var buff = new byte[nonce2.ByteCount];
+            nonce2.CopyIntoBuffer(buff);
+            return buff;
+        }
     }
 }
