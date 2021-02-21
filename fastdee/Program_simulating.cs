@@ -92,6 +92,16 @@ namespace fastdee
                 lock (udpSock) udpSock.SendTo(blob, ev.originator);
                 Console.WriteLine($"Gave {ev.originator.Address}:{ev.originator.Port} work unit {workUnit.wid}, scanning from {workUnit.nonceBase}, {ev.scanCount}");
             };
+            embeddedServer.NonceFound += (src, ev) =>
+            {
+                var work = tracker.RetrieveOriginal(ev.workid);
+                if (null == work)
+                {
+                    Console.WriteLine($"Worker providing results for untracked work ${ev.workid}, ignoring");
+                    return;
+                }
+                ShowNonceInfo(work, ev.increment, ev.hash);
+            };
             await embeddedServer.ReceiveForever();
             return 0;
         }
@@ -149,6 +159,38 @@ namespace fastdee
         {
             if (sz != 4) throw new ArgumentException("only supported n2 bytecount is 4", nameof(sz));
             return 4;
+        }
+
+        static void ShowNonceInfo(Work work, ulong increment, byte[] hash)
+        {
+            var nonce = work.nonceBase + increment;
+            Console.WriteLine($"WU: {work.uniq}, found nonce: {nonce:x16}");
+            if (hash.Length != 0) {
+                string hashString;
+                if (hash.Length % 8 == 0) hashString = HashString(hash, 8);
+                else if (hash.Length % 4 == 0) hashString = HashString(hash, 4);
+                else hashString = BitConverter.ToString(hash).Replace("-", "");
+                Console.WriteLine($"Hash: {hashString}");
+            }
+        }
+
+        /// <summary>
+        /// Show a few bytes without too much noise, yet help reading them.
+        /// </summary>
+        static string HashString(Span<byte> hash, uint width)
+        {
+            var bld = new System.Text.StringBuilder(hash.Length * 2 + 100); // plus some separators
+            var count = 0;
+            foreach (var oct in hash) {
+                if (count != 0)
+                {
+                    if (count % 8 == 0 || count % width == 0) bld.Append(' ');
+                    else if (count % 4 == 0) bld.Append('_');
+                }
+                bld.Append(oct.ToString("x2"));
+                count++;
+            }
+            return bld.ToString();
         }
     }
 }
