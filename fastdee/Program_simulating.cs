@@ -161,11 +161,11 @@ namespace fastdee
             return 4;
         }
 
-        static void ShowNonceInfo(Work work, ulong increment, byte[] hash)
+        static void ShowNonceInfo(Work work, ulong increment, byte[]? hash)
         {
             var nonce = work.nonceBase + increment;
             Console.WriteLine($"WU: {work.uniq}, found nonce: {nonce:x16}");
-            if (hash.Length != 0) {
+            if (null != hash && hash.Length != 0) { // if not null, len > 0 but let's check both.
                 string hashString;
                 if (hash.Length % 8 == 0) hashString = HashString(hash, 8);
                 else if (hash.Length % 4 == 0) hashString = HashString(hash, 4);
