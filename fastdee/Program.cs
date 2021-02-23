@@ -20,6 +20,12 @@ namespace fastdee
 
         static async Task<int> MainWithParsedAsync(ConnectArgs options)
         {
+            var stratHelp = InstantiateConnector(options.Algorithm, options.DifficultyMultiplier);
+            if (null == stratHelp)
+            {
+                Console.Error.WriteLine($"Unsupported algorithm: {options.Algorithm}");
+                return -3;
+            }
             // Pool server needs some additional parsing while I grok the documentation and find out if the lib can parse for me.
             string poolurl;
             ushort poolport;
@@ -31,14 +37,8 @@ namespace fastdee
             }
             var presentingAs = options.SubscribeAs ?? MyCanonicalSubscription();
             var serverInfo = new ServerConnectionInfo(poolurl, poolport, presentingAs, options.UserName, options.WorkerName, options.SillyPassword);
-            var stratHelp = InstantiateConnector(options.Algorithm, options.DifficultyMultiplier);
-            if (null == stratHelp)
-            {
-                Console.Error.WriteLine($"Unsupported algorithm: {options.Algorithm}");
-                return -3;
-            }
             var stratum = new Stratificator(stratHelp);
-            stratum.PumpForeverAsync(serverInfo).Wait(); // TODO: the other services
+            await stratum.PumpForeverAsync(serverInfo);
             return -2;
         }
 
