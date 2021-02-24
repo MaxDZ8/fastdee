@@ -57,7 +57,7 @@ namespace fastdee.Devices.Udp
             this.cancel = cancel;
         }
 
-        internal async Task ReceiveForever()
+        internal async Task ReceiveForeverAsync()
         {
             var buffer = new byte[4096]; // TODO: in line of theory I should support packets bigger than that. But I don't.
             var originator = new IPEndPoint(0, 0);
