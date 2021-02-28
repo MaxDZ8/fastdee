@@ -3,9 +3,6 @@ using System.Collections.Generic;
 using fastdee.Stratum;
 using System.IO;
 using System.Threading.Tasks;
-using System.Net;
-using System.Net.Sockets;
-using fastdee.Devices.Udp;
 
 namespace fastdee
 {
@@ -46,18 +43,8 @@ namespace fastdee
             stratHelp.SetDifficulty(shareDiff);
             stratHelp.StartingNonce(known.nonceStart);
             using var cts = new System.Threading.CancellationTokenSource();
-            using var orchestrator = new Orchestrator(stratHelp.GenWork, cts.Token);
-            try
-            {
-                orchestrator.Bind(new IPEndPoint(IPAddress.Any, 18458));
-            }
-            catch (SocketException ex)
-            {
-                Console.Error.WriteLine($"Failed to setup socket, OS error: {ex.ErrorCode}");
-                return -7;
-            }
-            await orchestrator.RunAsync();
-            return 0;
+            await OrchestrateUdpDevicesAsync(stratHelp.GenWork, cts.Token);
+            return -1024;
         }
 
         static async Task<ReplicationData> LoadKnownWorkAsync(string filePath)

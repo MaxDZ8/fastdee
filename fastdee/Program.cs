@@ -1,8 +1,10 @@
 ﻿using System;
 using CommandLine;
-
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using fastdee.Devices.Udp;
+using System.Net;
+using System.Net.Sockets;
 
 [assembly: InternalsVisibleTo("fastdee.Tests")]
 
@@ -50,11 +52,14 @@ namespace fastdee
         static async Task<int> MainWithParsedAsync(ServerConnectionInfo serverInfo, Stratum.Connector stratHelp)
         {
 
+            using var cts = new System.Threading.CancellationTokenSource();
             var stratum = new Stratificator(stratHelp);
-            await stratum.PumpForeverAsync(serverInfo);
-            return -2; // in theory, you should not be reaching me
+            await Task.WhenAll(
+                stratum.PumpForeverAsync(serverInfo),
+                OrchestrateUdpDevicesAsync(stratHelp.GenWork, cts.Token)
+            );
+            return -1024; // in theory, you should not be reaching me
         }
-
 
         static Stratum.Connector InstantiateConnector(string algorithm, double? diffmul, ulong? n2off = null, ulong nonceStart = 0)
         {
@@ -114,5 +119,23 @@ namespace fastdee
                 "keccak" => new BtcLikeDifficulty(mults.Stratum, mults.One),
                 _ => throw new NotImplementedException()
             };
+
+        /// <summary>
+        /// Managing the various devices is a fairly simple thing as everything is encapsulated.
+        /// </summary>
+        private static Task OrchestrateUdpDevicesAsync(Func<ulong, Stratum.Work?> genWork, System.Threading.CancellationToken goodbye)
+        {
+            using var orchestrator = new Orchestrator(genWork, goodbye);
+            try
+            {
+                orchestrator.Bind(new IPEndPoint(IPAddress.Any, 18458));
+            }
+            catch (SocketException ex)
+            {
+                throw new BadInitializationException($"Failed to setup socket, OS error: {ex.ErrorCode}");
+                // ^ Not quite, this comes very late and it doesn't even depend on the input data but anyway...
+            }
+            return orchestrator.RunAsync();
+        }
     }
 }
