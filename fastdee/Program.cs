@@ -20,32 +20,46 @@ namespace fastdee
 
         static async Task<int> MainWithParsedAsync(ConnectArgs options)
         {
-            var stratHelp = InstantiateConnector(options.Algorithm, options.DifficultyMultiplier);
-            if (null == stratHelp)
+            try
             {
-                Console.Error.WriteLine($"Unsupported algorithm: {options.Algorithm}");
+                var stratHelp = InstantiateConnector(options.Algorithm, options.DifficultyMultiplier);
+                var serverInfo = FromArgs(options);
+                return await MainWithParsedAsync(serverInfo, stratHelp);
+            }
+            catch (BadInitializationException ex)
+            {
+                Console.Error.WriteLine(ex.Message);
                 return -3;
             }
+        }
+        private static ServerConnectionInfo FromArgs(ConnectArgs options)
+        {
             // Pool server needs some additional parsing while I grok the documentation and find out if the lib can parse for me.
             string poolurl;
             ushort poolport;
             {
                 var parts = options.Pool.Split(':');
-                if (parts.Length != 2) throw new ApplicationException("Does not look like valid POOL:PORT endpoint!");
+                if (parts.Length != 2) throw new BadInitializationException("Does not look like valid POOL:PORT endpoint!");
                 poolurl = parts[0];
                 poolport = ushort.Parse(parts[1]);
             }
             var presentingAs = options.SubscribeAs ?? MyCanonicalSubscription();
-            var serverInfo = new ServerConnectionInfo(poolurl, poolport, presentingAs, options.UserName, options.WorkerName, options.SillyPassword);
-            var stratum = new Stratificator(stratHelp);
-            await stratum.PumpForeverAsync(serverInfo);
-            return -2;
+            return new ServerConnectionInfo(poolurl, poolport, presentingAs, options.UserName, options.WorkerName, options.SillyPassword);
         }
 
-        static Stratum.Connector? InstantiateConnector(string algorithm, double? diffmul, ulong? n2off = null, ulong nonceStart = 0)
+        static async Task<int> MainWithParsedAsync(ServerConnectionInfo serverInfo, Stratum.Connector stratHelp)
+        {
+
+            var stratum = new Stratificator(stratHelp);
+            await stratum.PumpForeverAsync(serverInfo);
+            return -2; // in theory, you should not be reaching me
+        }
+
+
+        static Stratum.Connector InstantiateConnector(string algorithm, double? diffmul, ulong? n2off = null, ulong nonceStart = 0)
         {
             var initialMerkle = ChooseMerkleGenerator(algorithm);
-            if (null == initialMerkle) return null;
+            if (null == initialMerkle) throw new BadInitializationException($"Unsupported algorithm: {algorithm}");
             var factors = ChooseDifficulties(algorithm, diffmul);
             var difficultyCalculator = new LockingCurrentDifficulty(ChooseDiffMaker(algorithm, factors));
             var headerGen = new Stratum.HeaderGenerator(initialMerkle);

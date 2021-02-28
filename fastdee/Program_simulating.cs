@@ -13,37 +13,30 @@ namespace fastdee
     {
         static async Task<int> SimulateWithParsedAsync(SimulateArgs options)
         {
-            string json;
             try
             {
-                json = File.ReadAllText(options.Source);
+                var load = await LoadKnownWorkAsync(options.Source);
+                var stratHelp = InstantiateConnector(load.algo, null, load.nonce2off, load.nonceStart);
+                return await SimulateWithParsedAsync(load, stratHelp);
             }
-            catch
+            catch (IOException)
             {
                 Console.Error.WriteLine($"Error trying to read: {options.Source}");
                 Console.Error.Write($"I am executing from: {Environment.CurrentDirectory}");
                 return -3;
             }
-            var load = Newtonsoft.Json.JsonConvert.DeserializeObject<ReplicationData>(json);
-            var stratHelp = InstantiateConnector(load.algo, null, load.nonce2off, load.nonceStart);
-            if (null == stratHelp)
+            catch (BadInitializationException ex)
             {
-                Console.Error.WriteLine($"Unsupported algorithm: {load.algo}");
-                return -4;
+                Console.Error.WriteLine(ex.Message);
+                return -3;
             }
-            if (null == load.subscribe)
-            {
-                Console.Error.WriteLine("No subscribe information");
-                return -5;
-            }
-            if (null == load.job)
-            {
-                Console.Error.WriteLine("No job information");
-                return -6;
-            }
-            var subscribeReply = MakeSubscribe(load.subscribe);
-            var notifyJob = MakeJob(load.job);
-            var shareDiff = GoodDiffOrThrow(load.shareDiff);
+        }
+
+        static async Task<int> SimulateWithParsedAsync(ReplicationData known, Connector stratHelp)
+        {
+            var subscribeReply = MakeSubscribe(known.subscribe);
+            var notifyJob = MakeJob(known.job);
+            var shareDiff = GoodDiffOrThrow(known.shareDiff);
             // I don't need to pump anything stratum-side, what I need to do is to just trigger the callbacks with the data.
             stratHelp.Connecting();
             stratHelp.Subscribing();
@@ -51,7 +44,7 @@ namespace fastdee
             stratHelp.Authorized(true);
             stratHelp.StartNewJob(notifyJob);
             stratHelp.SetDifficulty(shareDiff);
-            stratHelp.StartingNonce(load.nonceStart);
+            stratHelp.StartingNonce(known.nonceStart);
             using var cts = new System.Threading.CancellationTokenSource();
             using var orchestrator = new Orchestrator(stratHelp.GenWork, cts.Token);
             try
@@ -65,6 +58,15 @@ namespace fastdee
             }
             await orchestrator.RunAsync();
             return 0;
+        }
+
+        static async Task<ReplicationData> LoadKnownWorkAsync(string filePath)
+        {
+            var json = await File.ReadAllTextAsync(filePath);
+            var load = Newtonsoft.Json.JsonConvert.DeserializeObject<ReplicationData>(json);
+            if (null == load.subscribe) throw new BadInitializationException("No subscribe information");
+            if (null == load.job) throw new BadInitializationException("No job information");
+            return load;
         }
 
         static Stratum.Response.MiningSubscribe MakeSubscribe(ReplicationData.Subscribe repl)
