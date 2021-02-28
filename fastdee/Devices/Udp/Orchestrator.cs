@@ -20,6 +20,7 @@ namespace fastdee.Devices.Udp
         readonly Tracker<IPEndPoint> tracker;
 
         public event EventHandler<WelcomedArgs<IPEndPoint, IPAddress>>? Welcomed;
+        public event EventHandler<WorkProvidedArgs<IPEndPoint>>? WorkProvided;
 
         public Orchestrator(Func<ulong, Work?> genWork, System.Threading.CancellationToken goodbye)
         {
@@ -62,7 +63,8 @@ namespace fastdee.Devices.Udp
                 var payload = PayloadCooker.CookedPayload(workUnit, WireAlgoFormat.Keccak);
                 var blob = ReplyMaker.YourWork(workUnit.wid, payload);
                 lock (udpSock) udpSock.SendTo(blob, ev.originator);
-                Console.WriteLine($"Gave {ev.originator.Address}:{ev.originator.Port} work unit {workUnit.wid}, scanning from {workUnit.nonceBase}, {ev.scanCount}");
+                var given = new WorkProvidedArgs<IPEndPoint>(ev, workUnit);
+                WorkProvided?.Invoke(this, given);
             };
             embeddedServer.NonceFound += (src, ev) =>
             {

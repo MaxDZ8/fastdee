@@ -4,6 +4,7 @@ using fastdee.Stratum;
 using System.IO;
 using System.Threading.Tasks;
 using System.Net;
+using fastdee.Devices;
 
 namespace fastdee
 {
@@ -46,6 +47,7 @@ namespace fastdee
             using var cts = new System.Threading.CancellationTokenSource();
             using var orchestrator = new Devices.Udp.Orchestrator(stratHelp.GenWork, cts.Token);
             orchestrator.Welcomed += (src, ev) => NewDeviceOnline(ev.OriginatingFrom, ev.Address);
+            orchestrator.WorkProvided += (src, ev) => ShowWorkUnitDispatched(ev.OriginatingFrom, ev.WorkUnit);
             BindOrThrow(orchestrator);
             await orchestrator.RunAsync();
             return -1024;
@@ -66,6 +68,11 @@ namespace fastdee
             Console.WriteLine($"It can contact me at IP: {myAddr}");
             Console.WriteLine($"Model common: {BitConverter.ToString(e.identificator)}");
             Console.WriteLine($"Device-specific: {BitConverter.ToString(e.deviceSpecific)}");
+        }
+
+        private static void ShowWorkUnitDispatched(WorkRequestArgs<IPEndPoint> ev, RequestedWork workUnit)
+        {
+            Console.WriteLine($"Gave {ev.originator.Address}:{ev.originator.Port} work unit {workUnit.wid}, scanning from {workUnit.nonceBase}, {ev.scanCount}");
         }
 
 
