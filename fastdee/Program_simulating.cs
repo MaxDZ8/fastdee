@@ -16,7 +16,8 @@ namespace fastdee
             {
                 var load = await LoadKnownWorkAsync(options.Source);
                 var stratHelp = InstantiateConnector(load.algo, null, load.nonce2off, load.nonceStart);
-                return await SimulateWithParsedAsync(load, stratHelp);
+                FeedKnownData(stratHelp, load);
+                return await SimulateWithParsedAsync(stratHelp);
             }
             catch (IOException)
             {
@@ -31,7 +32,7 @@ namespace fastdee
             }
         }
 
-        static async Task<int> SimulateWithParsedAsync(ReplicationData known, Connector stratHelp)
+        private static void FeedKnownData(Connector stratHelp, ReplicationData known)
         {
             var subscribeReply = MakeSubscribe(known.subscribe);
             var notifyJob = MakeJob(known.job);
@@ -44,6 +45,10 @@ namespace fastdee
             stratHelp.StartNewJob(notifyJob);
             stratHelp.SetDifficulty(shareDiff);
             stratHelp.StartingNonce(known.nonceStart);
+        }
+
+        static async Task<int> SimulateWithParsedAsync(Connector stratHelp)
+        {
             using var cts = new System.Threading.CancellationTokenSource();
             using var orchestrator = new Devices.Udp.Orchestrator(stratHelp.GenWork, cts.Token);
             orchestrator.Welcomed += (src, ev) => NewDeviceOnline(ev.OriginatingFrom, ev.Address);
