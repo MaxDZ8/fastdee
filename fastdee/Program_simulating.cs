@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using fastdee.Stratum;
 using System.IO;
 using System.Threading.Tasks;
+using System.Net;
 
 namespace fastdee
 {
@@ -43,7 +44,10 @@ namespace fastdee
             stratHelp.SetDifficulty(shareDiff);
             stratHelp.StartingNonce(known.nonceStart);
             using var cts = new System.Threading.CancellationTokenSource();
-            await OrchestrateUdpDevicesAsync(stratHelp.GenWork, cts.Token);
+            using var orchestrator = new Devices.Udp.Orchestrator(stratHelp.GenWork, cts.Token);
+            orchestrator.Welcomed += (src, ev) => NewDeviceOnline(ev.OriginatingFrom, ev.Address);
+            BindOrThrow(orchestrator);
+            await orchestrator.RunAsync();
             return -1024;
         }
 
@@ -55,6 +59,15 @@ namespace fastdee
             if (null == load.job) throw new BadInitializationException("No job information");
             return load;
         }
+
+        private static void NewDeviceOnline(Devices.TurnOnArgs<IPEndPoint> e, IPAddress myAddr)
+        {
+            Console.WriteLine($"New device online: {e.originator.Address}:{e.originator.Port}");
+            Console.WriteLine($"It can contact me at IP: {myAddr}");
+            Console.WriteLine($"Model common: {BitConverter.ToString(e.identificator)}");
+            Console.WriteLine($"Device-specific: {BitConverter.ToString(e.deviceSpecific)}");
+        }
+
 
         static Stratum.Response.MiningSubscribe MakeSubscribe(ReplicationData.Subscribe repl)
         {

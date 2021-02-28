@@ -54,9 +54,11 @@ namespace fastdee
 
             using var cts = new System.Threading.CancellationTokenSource();
             var stratum = new Stratificator(stratHelp);
+            using var orchestrator = new Orchestrator(stratHelp.GenWork, cts.Token);
+            BindOrThrow(orchestrator);
             await Task.WhenAll(
                 stratum.PumpForeverAsync(serverInfo),
-                OrchestrateUdpDevicesAsync(stratHelp.GenWork, cts.Token)
+                orchestrator.RunAsync()
             );
             return -1024; // in theory, you should not be reaching me
         }
@@ -121,11 +123,11 @@ namespace fastdee
             };
 
         /// <summary>
-        /// Managing the various devices is a fairly simple thing as everything is encapsulated.
+        /// Convenience function to bind the orchestrator to a port.
         /// </summary>
-        private static Task OrchestrateUdpDevicesAsync(Func<ulong, Stratum.Work?> genWork, System.Threading.CancellationToken goodbye)
+        /// <remarks>Could this be in the object itself? I'd rather not build a dependancy to the exception.</remarks>
+        private static void BindOrThrow(Orchestrator orchestrator)
         {
-            using var orchestrator = new Orchestrator(genWork, goodbye);
             try
             {
                 orchestrator.Bind(new IPEndPoint(IPAddress.Any, 18458));
@@ -135,7 +137,6 @@ namespace fastdee
                 throw new BadInitializationException($"Failed to setup socket, OS error: {ex.ErrorCode}");
                 // ^ Not quite, this comes very late and it doesn't even depend on the input data but anyway...
             }
-            return orchestrator.RunAsync();
         }
     }
 }

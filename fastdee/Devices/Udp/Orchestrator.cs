@@ -19,6 +19,8 @@ namespace fastdee.Devices.Udp
         readonly DatagramPump embeddedServer;
         readonly Tracker<IPEndPoint> tracker;
 
+        public event EventHandler<WelcomedArgs<IPEndPoint, IPAddress>>? Welcomed;
+
         public Orchestrator(Func<ulong, Work?> genWork, System.Threading.CancellationToken goodbye)
         {
             udpSock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
@@ -43,7 +45,7 @@ namespace fastdee.Devices.Udp
                     var blob = ReplyMaker.Welcome(myAddr, ev.identificator, ev.deviceSpecific);
                     if (null == blob) return;
                     lock (udpSock) udpSock.SendTo(blob, ev.originator);
-                    NewDeviceOnline(ev, myAddr);
+                    Welcomed?.Invoke(this, new WelcomedArgs<IPEndPoint, IPAddress>(ev, myAddr));
                 }
             };
             embeddedServer.WorkAsked += (src, ev) =>
@@ -73,14 +75,6 @@ namespace fastdee.Devices.Udp
                 ShowNonceInfo(work, ev.increment, ev.hash);
             };
             return embeddedServer.ReceiveForeverAsync();
-        }
-
-        private static void NewDeviceOnline(TurnOnArgs<IPEndPoint> e, IPAddress myAddr)
-        {
-            Console.WriteLine($"New device online: {e.originator.Address}:{e.originator.Port}");
-            Console.WriteLine($"It can contact me at IP: {myAddr}");
-            Console.WriteLine($"Model common: {BitConverter.ToString(e.identificator)}");
-            Console.WriteLine($"Device-specific: {BitConverter.ToString(e.deviceSpecific)}");
         }
 
         static void ShowNonceInfo(Work work, ulong increment, byte[]? hash)
