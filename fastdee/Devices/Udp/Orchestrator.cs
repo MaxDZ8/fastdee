@@ -17,26 +17,38 @@ namespace fastdee.Devices.Udp
     {
         readonly Socket udpSock;
         readonly DatagramPump embeddedServer;
-        readonly Tracker<IPEndPoint> tracker;
 
         public event EventHandler<WelcomedArgs<IPEndPoint, IPAddress>>? Welcomed;
         public event EventHandler<WorkProvidedArgs<IPEndPoint>>? WorkProvided;
+        public event EventHandler<NonceFoundArgs> NonceFound
+        {
+            add { embeddedServer.NonceFound += value; }
+            remove { embeddedServer.NonceFound -= value; }
+        }
 
-        public Orchestrator(Func<ulong, Work?> genWork, System.Threading.CancellationToken goodbye)
+        public Orchestrator(System.Threading.CancellationToken goodbye)
         {
             udpSock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             embeddedServer = new DatagramPump(udpSock, goodbye);
-            tracker = new Tracker<IPEndPoint>(genWork);
         }
 
         public void Bind(ushort port = 18458) => Bind(new IPEndPoint(IPAddress.Any, port));
         public void Bind(IPEndPoint landingIp) => udpSock.Bind(landingIp);
 
         /// <summary>
+        /// This reliable function generates useful work to be given the asking device.
+        /// It can return null to indicate no work to be given (useful for cooling down) but if it can, 
+        /// it must take care of rolling everything required.
+        /// </summary>
+        /// <param name="originator">The requesting device</param>
+        /// <param name="scanAmount">How many nonces to be reserved for the remote scan operation.</param>
+        internal delegate RequestedWork? GenWorkFunc(IPEndPoint originator, ulong scanAmount);
+
+        /// <summary>
         /// Before pumping the messages there is some additional setup to carry out.
         /// Mostly setting up the callbacks / events.
         /// </summary>
-        internal Task RunAsync()
+        internal Task RunAsync(GenWorkFunc genWork)
         {
             embeddedServer.IntroducedItself += (src, ev) =>
             {
@@ -52,7 +64,7 @@ namespace fastdee.Devices.Udp
             embeddedServer.WorkAsked += (src, ev) =>
             {
                 if (ev.algoFormat != WireAlgoFormat.Keccak) return; // the idea is each fastdee instance runs a single algo
-                var workUnit = tracker.ConsumeNonces(ev.originator, ev.scanCount);
+                var workUnit = genWork(ev.originator, ev.scanCount);
                 if (null == workUnit) return;
                 /* ^ The device will keep asking and it'll be quite noisy.
                  * All things considered I have decided this is the right approach because such traffic which gets increasingly common
@@ -66,49 +78,7 @@ namespace fastdee.Devices.Udp
                 var given = new WorkProvidedArgs<IPEndPoint>(ev, workUnit);
                 WorkProvided?.Invoke(this, given);
             };
-            embeddedServer.NonceFound += (src, ev) =>
-            {
-                var work = tracker.RetrieveOriginal(ev.workid);
-                if (null == work)
-                {
-                    Console.WriteLine($"Worker providing results for untracked work ${ev.workid}, ignoring");
-                    return;
-                }
-                ShowNonceInfo(work, ev.increment, ev.hash);
-            };
             return embeddedServer.ReceiveForeverAsync();
-        }
-
-        static void ShowNonceInfo(Work work, ulong increment, byte[]? hash)
-        {
-            var nonce = work.nonceBase + increment;
-            Console.WriteLine($"WU: {work.uniq}, found nonce: {nonce:x16}");
-            if (null != hash && hash.Length != 0) { // if not null, len > 0 but let's check both.
-                string hashString;
-                if (hash.Length % 8 == 0) hashString = HashString(hash, 8);
-                else if (hash.Length % 4 == 0) hashString = HashString(hash, 4);
-                else hashString = BitConverter.ToString(hash).Replace("-", "");
-                Console.WriteLine($"Hash: {hashString}");
-            }
-        }
-
-        /// <summary>
-        /// Show a few bytes without too much noise, yet help reading them.
-        /// </summary>
-        static string HashString(Span<byte> hash, uint width)
-        {
-            var bld = new System.Text.StringBuilder(hash.Length * 2 + 100); // plus some separators
-            var count = 0;
-            foreach (var oct in hash) {
-                if (count != 0)
-                {
-                    if (count % 8 == 0 || count % width == 0) bld.Append(' ');
-                    else if (count % 4 == 0) bld.Append('_');
-                }
-                bld.Append(oct.ToString("x2"));
-                count++;
-            }
-            return bld.ToString();
         }
 
         public void Dispose()

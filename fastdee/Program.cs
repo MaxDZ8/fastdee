@@ -51,14 +51,14 @@ namespace fastdee
 
         static async Task<int> MainWithParsedAsync(ServerConnectionInfo serverInfo, Stratum.Connector stratHelp)
         {
-
+            var tracker = new Devices.Tracker<IPEndPoint>(stratHelp.GenWork);
             using var cts = new System.Threading.CancellationTokenSource();
             var stratum = new Stratificator(stratHelp);
-            using var orchestrator = new Orchestrator(stratHelp.GenWork, cts.Token);
+            using var orchestrator = new Orchestrator(cts.Token);
             BindOrThrow(orchestrator);
             await Task.WhenAll(
                 stratum.PumpForeverAsync(serverInfo),
-                orchestrator.RunAsync()
+                orchestrator.RunAsync(tracker.ConsumeNonces)
             );
             return -1024; // in theory, you should not be reaching me
         }
