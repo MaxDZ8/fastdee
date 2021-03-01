@@ -40,6 +40,11 @@ namespace fastdee.Stratum
             return new Response.MiningSubscribe(sessionId, extraNonce1, (ushort)nonce2sz);
         }
 
+        internal static bool Submit(object? result)
+        {
+            throw new System.NotImplementedException();
+        }
+
         static public bool MiningAuthorize(object? result)
         {
             if (null == result) throw new MissingRequiredException("mining.authorize: outcome missing");

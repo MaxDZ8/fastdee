@@ -137,5 +137,17 @@ namespace fastdee.Tests.Stratum
             var bleh = JsonConvert.SerializeObject(got);
             Assert.Equal(json, bleh);
         }
+
+        [Theory]
+        [InlineData("true")]
+        [InlineData("false")] // no matter how much I waited, I couldn't get a single bad share ^_^!
+        // I suspect false cannot really be observed. I expect error to be non-null therefore take priority but who knows!
+        public void ParsableSubmitReply(string json)
+        {
+            var asParsed = JsonConvert.DeserializeObject<bool>(json);
+            var got = ResponseParser.Submit(asParsed);
+            var bleh = JsonConvert.SerializeObject(got);
+            Assert.Equal(json, bleh);
+        }
     }
 }
