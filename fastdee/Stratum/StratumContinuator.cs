@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using System.Linq; // ToArray
 
 namespace fastdee.Stratum
 {
@@ -31,6 +33,17 @@ namespace fastdee.Stratum
             return req.task;
         }
 
+        internal Task<bool> SubmitAsync(string userName, string jobId, IReadOnlyList<byte> networkTime, IReadOnlyList<byte> nonce2, uint nonce)
+        {
+            var args = new string[] {
+                userName, jobId,
+                HexString(nonce2), HexString(networkTime), HexString(nonce)
+            };
+            var req = matcher.Request("mining.submit", args, result => ResponseParser.Submit(result));
+            WrappedSend(req.request);
+            return req.task;
+        }
+
         void WrappedSend(object gizmo)
         {
             var json = JsonConvert.SerializeObject(gizmo);
@@ -48,6 +61,18 @@ namespace fastdee.Stratum
             });
         }
 
+        static string HexString(IReadOnlyList<byte> blob)
+        {
+            var uglee = blob.ToArray();
+            return BitConverter.ToString(uglee).Replace("-", "");
+        }
+
+        static string HexString(uint nonce)
+        {
+            var format = nonce > uint.MaxValue ? "x16" : "x8";
+            return nonce.ToString(format);
+        }
+
         /// <summary>
         /// Attempts to guess if this is a request we understand and forward it to the right parser, awakening the sleeping process.
         /// </summary>
@@ -56,6 +81,7 @@ namespace fastdee.Stratum
         public void Dispose()
         {
             matcher.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 }

@@ -55,9 +55,19 @@ namespace fastdee
             using var cts = new System.Threading.CancellationTokenSource();
             var stratum = new Stratificator(stratHelp);
             using var orchestrator = new Orchestrator(cts.Token);
+            orchestrator.NonceFound += (src, ev) =>
+            {
+                var work = tracker.RetrieveOriginal(ev.workid);
+                if (null != work)
+                {
+                    var nonce = (uint)(work.nonceBase + ev.increment);
+                    // TODO: check hash and diff maybe discard / signal error
+                    stratum.Submit(work.info, nonce);
+                }
+            };
             BindOrThrow(orchestrator);
             await Task.WhenAll(
-                stratum.PumpForeverAsync(serverInfo),
+                stratum.PumpForeverAsync(serverInfo, cts.Token),
                 orchestrator.RunAsync(tracker.ConsumeNonces)
             );
             return -1024; // in theory, you should not be reaching me
