@@ -15,7 +15,7 @@ namespace fastdee
             try
             {
                 var load = await LoadKnownWorkAsync(options.Source);
-                var stratHelp = InstantiateConnector(load.algo, null, load.nonce2off, load.nonceStart);
+                var stratHelp = InstantiateConnector(load.algo, null, load.nonce2off);
                 FeedKnownData(stratHelp, load);
                 return await SimulateWithParsedAsync(stratHelp);
             }

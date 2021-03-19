@@ -73,7 +73,7 @@ namespace fastdee
             return -1024; // in theory, you should not be reaching me
         }
 
-        static Stratum.Connector InstantiateConnector(string algorithm, double? diffmul, ulong? n2off = null, ulong nonceStart = 0)
+        static Stratum.Connector InstantiateConnector(string algorithm, double? diffmul, ulong? n2off = null)
         {
             var initialMerkle = ChooseMerkleGenerator(algorithm);
             if (null == initialMerkle) throw new BadInitializationException($"Unsupported algorithm: {algorithm}");
