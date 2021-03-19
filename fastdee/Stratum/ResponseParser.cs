@@ -42,7 +42,7 @@ namespace fastdee.Stratum
 
         internal static bool Submit(object? result)
         {
-            if (null == result) throw new MissingRequiredException("mining.submite: outcome missing");
+            if (null == result) throw new MissingRequiredException("mining.submit: outcome missing");
             if (result is bool real) return real;
             throw new BadParseException("mining.submit: nonce accept result must be true (false?)");
         }
