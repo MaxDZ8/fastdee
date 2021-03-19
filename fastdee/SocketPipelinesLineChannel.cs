@@ -105,7 +105,7 @@ namespace fastdee
             buffer = buffer.Slice(buffer.GetPosition(1, position.Value));
             // Note: if you get a newline, it is a valid UTF8 'character'... 'codepoint'? 
             // Anyway, it must decode correctly at least there, if not, everything is garbled up big way so BOOM!
-            gotcha = Encoding.UTF8.GetString(mangle).Trim();
+            gotcha = Encoding.UTF8.GetString(mangle);
             return true;
         }
 
