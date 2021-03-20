@@ -87,7 +87,6 @@ namespace fastdee.Stratum
         static void StampNonce2(byte[] coinbase, int nonce2Off, IExtraNonce2Provider nonce2)
         {
             nonce2.CopyIntoBuffer(new Span<byte>(coinbase, nonce2Off, nonce2.ByteCount));
-            nonce2.Consumed();
         }
 
         static byte[] MakeNewMerkles(FromCoinbaseFunc merkleMaker, IReadOnlyList<Mining.Merkle> merkles, byte[] coinbase)

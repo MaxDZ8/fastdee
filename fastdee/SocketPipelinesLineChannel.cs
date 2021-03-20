@@ -17,13 +17,13 @@ namespace fastdee
     {
         readonly Socket lowlevel;
         readonly CancellationTokenSource farewell = new CancellationTokenSource();
-        readonly Pipe pipe = new Pipe();
         public event EventHandler<GottaLineArgs>? GottaLine;
 
         internal SocketPipelinesLineChannel(Socket lowlevel)
         {
             this.lowlevel = lowlevel;
-            Task = Task.WhenAll(SocketToPipe(), PipeToLines());
+            var pipe = new Pipe();
+            Task = Task.WhenAll(SocketToPipeAsync(pipe.Writer), PipeToLinesAsync(pipe.Reader));
         }
 
         protected virtual void OnGottaLine(GottaLineArgs args) => GottaLine?.Invoke(this, args);
@@ -37,12 +37,12 @@ namespace fastdee
         /// Feeding the pipeline with data taken from socket.
         /// This code is basically from pipeline manual + the cancellation token.
         /// </summary>
-        async Task SocketToPipe()
+        async Task SocketToPipeAsync(PipeWriter writer)
         {
             const int minimumBufferSize = 512;
             while (true)
             {
-                Memory<byte> memory = pipe.Writer.GetMemory(minimumBufferSize);
+                Memory<byte> memory = writer.GetMemory(minimumBufferSize);
                 try
                 {
                     int bytesRead = await lowlevel.ReceiveAsync(memory, SocketFlags.None, farewell.Token);
@@ -50,7 +50,7 @@ namespace fastdee
                     {
                         break;
                     }
-                    pipe.Writer.Advance(bytesRead);
+                    writer.Advance(bytesRead);
                 }
                 catch (Exception)
                 {
@@ -58,36 +58,35 @@ namespace fastdee
                     break;
                 }
 
-                FlushResult result = await pipe.Writer.FlushAsync(farewell.Token);
+                FlushResult result = await writer.FlushAsync(farewell.Token);
                 if (result.IsCompleted)
                 {
                     break;
                 }
             }
 
-            await pipe.Writer.CompleteAsync();
+            await writer.CompleteAsync();
         }
 
         /// <summary>
         /// Search for newlines in the data returned from the pipeline.
         /// Again, this is basically by the book.
         /// </summary>
-        async Task PipeToLines()
+        async Task PipeToLinesAsync(PipeReader reader)
         {
             while (true)
             {
-                ReadResult result = await pipe.Reader.ReadAsync(farewell.Token);
+                ReadResult result = await reader.ReadAsync(farewell.Token);
                 ReadOnlySequence<byte> buffer = result.Buffer;
-
                 while (TryReadLine(ref buffer, out var stringy))
                 {
                     if (stringy.Length != 0) OnGottaLine(new GottaLineArgs(stringy));
                 }
 
-                pipe.Reader.AdvanceTo(buffer.Start, buffer.End);
+                reader.AdvanceTo(buffer.Start, buffer.End);
                 if (result.IsCompleted) break;
             }
-            await pipe.Reader.CompleteAsync();
+            await reader.CompleteAsync();
         }
 
         /// <summary>
@@ -106,7 +105,7 @@ namespace fastdee
             buffer = buffer.Slice(buffer.GetPosition(1, position.Value));
             // Note: if you get a newline, it is a valid UTF8 'character'... 'codepoint'? 
             // Anyway, it must decode correctly at least there, if not, everything is garbled up big way so BOOM!
-            gotcha = Encoding.UTF8.GetString(mangle).Trim();
+            gotcha = Encoding.UTF8.GetString(mangle);
             return true;
         }
 

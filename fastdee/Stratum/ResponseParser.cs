@@ -40,6 +40,13 @@ namespace fastdee.Stratum
             return new Response.MiningSubscribe(sessionId, extraNonce1, (ushort)nonce2sz);
         }
 
+        internal static bool Submit(object? result)
+        {
+            if (null == result) throw new MissingRequiredException("mining.submit: outcome missing");
+            if (result is bool real) return real;
+            throw new BadParseException("mining.submit: nonce accept result must be true (false?)");
+        }
+
         static public bool MiningAuthorize(object? result)
         {
             if (null == result) throw new MissingRequiredException("mining.authorize: outcome missing");

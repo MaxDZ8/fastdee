@@ -1,8 +1,10 @@
 ﻿using System;
 using CommandLine;
-
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using fastdee.Devices.Udp;
+using System.Net;
+using System.Net.Sockets;
 
 [assembly: InternalsVisibleTo("fastdee.Tests")]
 
@@ -20,32 +22,61 @@ namespace fastdee
 
         static async Task<int> MainWithParsedAsync(ConnectArgs options)
         {
+            try
+            {
+                var stratHelp = InstantiateConnector(options.Algorithm, options.DifficultyMultiplier);
+                var serverInfo = FromArgs(options);
+                return await MainWithParsedAsync(serverInfo, stratHelp);
+            }
+            catch (BadInitializationException ex)
+            {
+                Console.Error.WriteLine(ex.Message);
+                return -3;
+            }
+        }
+        private static ServerConnectionInfo FromArgs(ConnectArgs options)
+        {
             // Pool server needs some additional parsing while I grok the documentation and find out if the lib can parse for me.
             string poolurl;
             ushort poolport;
             {
                 var parts = options.Pool.Split(':');
-                if (parts.Length != 2) throw new ApplicationException("Does not look like valid POOL:PORT endpoint!");
+                if (parts.Length != 2) throw new BadInitializationException("Does not look like valid POOL:PORT endpoint!");
                 poolurl = parts[0];
                 poolport = ushort.Parse(parts[1]);
             }
             var presentingAs = options.SubscribeAs ?? MyCanonicalSubscription();
-            var serverInfo = new ServerConnectionInfo(poolurl, poolport, presentingAs, options.UserName, options.WorkerName, options.SillyPassword);
-            var stratHelp = InstantiateConnector(options.Algorithm, options.DifficultyMultiplier);
-            if (null == stratHelp)
-            {
-                Console.Error.WriteLine($"Unsupported algorithm: {options.Algorithm}");
-                return -3;
-            }
-            var stratum = new Stratificator(stratHelp);
-            stratum.PumpForeverAsync(serverInfo).Wait(); // TODO: the other services
-            return -2;
+            return new ServerConnectionInfo(poolurl, poolport, presentingAs, options.UserName, options.WorkerName, options.SillyPassword);
         }
 
-        static Stratum.Connector? InstantiateConnector(string algorithm, double? diffmul, ulong? n2off = null, ulong nonceStart = 0)
+        static async Task<int> MainWithParsedAsync(ServerConnectionInfo serverInfo, Stratum.Connector stratHelp)
+        {
+            var tracker = new Devices.Tracker<IPEndPoint>(stratHelp.GenWork);
+            using var cts = new System.Threading.CancellationTokenSource();
+            var stratum = new Stratificator(stratHelp);
+            using var orchestrator = new Orchestrator(cts.Token);
+            orchestrator.NonceFound += (src, ev) =>
+            {
+                var work = tracker.RetrieveOriginal(ev.workid);
+                if (null != work)
+                {
+                    var nonce = (uint)(work.nonceBase + ev.increment);
+                    // TODO: check hash and diff maybe discard / signal error
+                    stratum.Submit(work.info, nonce);
+                }
+            };
+            BindOrThrow(orchestrator);
+            await Task.WhenAll(
+                stratum.PumpForeverAsync(serverInfo, cts.Token),
+                orchestrator.RunAsync(tracker.ConsumeNonces)
+            );
+            return -1024; // in theory, you should not be reaching me
+        }
+
+        static Stratum.Connector InstantiateConnector(string algorithm, double? diffmul, ulong? n2off = null)
         {
             var initialMerkle = ChooseMerkleGenerator(algorithm);
-            if (null == initialMerkle) return null;
+            if (null == initialMerkle) throw new BadInitializationException($"Unsupported algorithm: {algorithm}");
             var factors = ChooseDifficulties(algorithm, diffmul);
             var difficultyCalculator = new LockingCurrentDifficulty(ChooseDiffMaker(algorithm, factors));
             var headerGen = new Stratum.HeaderGenerator(initialMerkle);
@@ -100,5 +131,22 @@ namespace fastdee
                 "keccak" => new BtcLikeDifficulty(mults.Stratum, mults.One),
                 _ => throw new NotImplementedException()
             };
+
+        /// <summary>
+        /// Convenience function to bind the orchestrator to a port.
+        /// </summary>
+        /// <remarks>Could this be in the object itself? I'd rather not build a dependancy to the exception.</remarks>
+        private static void BindOrThrow(Orchestrator orchestrator)
+        {
+            try
+            {
+                orchestrator.Bind(new IPEndPoint(IPAddress.Any, 18458));
+            }
+            catch (SocketException ex)
+            {
+                throw new BadInitializationException($"Failed to setup socket, OS error: {ex.ErrorCode}");
+                // ^ Not quite, this comes very late and it doesn't even depend on the input data but anyway...
+            }
+        }
     }
 }

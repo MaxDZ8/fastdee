@@ -25,7 +25,7 @@ namespace fastdee.Stratum
 
         class Tracked<T> : ITracked
         {
-            readonly TaskCompletionSource<T> tcs = new TaskCompletionSource<T>();
+            readonly TaskCompletionSource<T> tcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
             readonly Func<object?, T> trasmogrify;
 
             internal Tracked(Func<object?, T> trasmogrify) { this.trasmogrify = trasmogrify; }

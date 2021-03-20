@@ -4,8 +4,7 @@ using fastdee.Stratum;
 using System.IO;
 using System.Threading.Tasks;
 using System.Net;
-using System.Net.Sockets;
-using fastdee.Devices.Udp;
+using fastdee.Devices;
 
 namespace fastdee
 {
@@ -13,37 +12,31 @@ namespace fastdee
     {
         static async Task<int> SimulateWithParsedAsync(SimulateArgs options)
         {
-            string json;
             try
             {
-                json = File.ReadAllText(options.Source);
+                var load = await LoadKnownWorkAsync(options.Source);
+                var stratHelp = InstantiateConnector(load.algo, null, load.nonce2off);
+                FeedKnownData(stratHelp, load);
+                return await SimulateWithParsedAsync(stratHelp);
             }
-            catch
+            catch (IOException)
             {
                 Console.Error.WriteLine($"Error trying to read: {options.Source}");
                 Console.Error.Write($"I am executing from: {Environment.CurrentDirectory}");
                 return -3;
             }
-            var load = Newtonsoft.Json.JsonConvert.DeserializeObject<ReplicationData>(json);
-            var stratHelp = InstantiateConnector(load.algo, null, load.nonce2off, load.nonceStart);
-            if (null == stratHelp)
+            catch (BadInitializationException ex)
             {
-                Console.Error.WriteLine($"Unsupported algorithm: {load.algo}");
-                return -4;
+                Console.Error.WriteLine(ex.Message);
+                return -3;
             }
-            if (null == load.subscribe)
-            {
-                Console.Error.WriteLine("No subscribe information");
-                return -5;
-            }
-            if (null == load.job)
-            {
-                Console.Error.WriteLine("No job information");
-                return -6;
-            }
-            var subscribeReply = MakeSubscribe(load.subscribe);
-            var notifyJob = MakeJob(load.job);
-            var shareDiff = GoodDiffOrThrow(load.shareDiff);
+        }
+
+        private static void FeedKnownData(Connector stratHelp, ReplicationData known)
+        {
+            var subscribeReply = MakeSubscribe(known.subscribe);
+            var notifyJob = MakeJob(known.job);
+            var shareDiff = GoodDiffOrThrow(known.shareDiff);
             // I don't need to pump anything stratum-side, what I need to do is to just trigger the callbacks with the data.
             stratHelp.Connecting();
             stratHelp.Subscribing();
@@ -51,49 +44,17 @@ namespace fastdee
             stratHelp.Authorized(true);
             stratHelp.StartNewJob(notifyJob);
             stratHelp.SetDifficulty(shareDiff);
-            stratHelp.StartingNonce(load.nonceStart);
+            stratHelp.StartingNonce(known.nonceStart);
+        }
+
+        static async Task<int> SimulateWithParsedAsync(Connector stratHelp)
+        {
+            var tracker = new Tracker<IPEndPoint>(stratHelp.GenWork);
             using var cts = new System.Threading.CancellationTokenSource();
-            using var udpSock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            try
-            {
-                udpSock.Bind(new IPEndPoint(IPAddress.Any, 18458));
-            }
-            catch (SocketException ex)
-            {
-                Console.Error.WriteLine($"Failed to setup socket, OS error: {ex.ErrorCode}");
-                throw;
-            }
-            var embeddedServer = new DatagramPump(udpSock, cts.Token);
-            var tracker = new Devices.Tracker<IPEndPoint>(stratHelp.GenWork);
-            embeddedServer.IntroducedItself += (src, ev) =>
-            {
-                var myAddr = ReplyMaker.ResolveMyIpForDevice(ev.originator);
-                if (null != myAddr)
-                {
-                    var blob = ReplyMaker.Welcome(myAddr, ev.identificator, ev.deviceSpecific);
-                    if (null == blob) return;
-                    lock (udpSock) udpSock.SendTo(blob, ev.originator);
-                    NewDeviceOnline(ev, myAddr);
-                }
-            };
-            embeddedServer.WorkAsked += (src, ev) =>
-            {
-                if (ev.algoFormat != Devices.WireAlgoFormat.Keccak) return; // the idea is each fastdee instance runs a single algo
-                var workUnit = tracker.ConsumeNonces(ev.originator, ev.scanCount);
-                if (null == workUnit) return;
-                /* ^ The device will keep asking and it'll be quite noisy.
-                 * All things considered I have decided this is the right approach because such traffic which gets increasingly common
-                 * can be an indicator of something going awry. So, for the time being there's no "no work" reply. 
-                 * Note idle devices over time will be more and more noisy and eventually reboot, going into discovery,
-                 * that's even worse but when stuff breaks I want it to break big way.
-                 */
-                var payload = PayloadCooker.CookedPayload(workUnit, Devices.WireAlgoFormat.Keccak);
-                var blob = ReplyMaker.YourWork(workUnit.wid, payload);
-                lock (udpSock) udpSock.SendTo(blob, ev.originator);
-                Console.WriteLine($"Gave {ev.originator.Address}:{ev.originator.Port} work unit {workUnit.wid}, scanning from {workUnit.nonceBase}, {ev.scanCount}");
-            };
-            embeddedServer.NonceFound += (src, ev) =>
-            {
+            using var orchestrator = new Devices.Udp.Orchestrator(cts.Token);
+            orchestrator.Welcomed += (src, ev) => NewDeviceOnline(ev.OriginatingFrom, ev.Address);
+            orchestrator.WorkProvided += (src, ev) => ShowWorkUnitDispatched(ev.OriginatingFrom, ev.WorkUnit);
+            orchestrator.NonceFound += (src, ev) => {
                 var work = tracker.RetrieveOriginal(ev.workid);
                 if (null == work)
                 {
@@ -102,8 +63,18 @@ namespace fastdee
                 }
                 ShowNonceInfo(work, ev.increment, ev.hash);
             };
-            await embeddedServer.ReceiveForever();
-            return 0;
+            BindOrThrow(orchestrator);
+            await orchestrator.RunAsync(tracker.ConsumeNonces);
+            return -1024;
+        }
+
+        static async Task<ReplicationData> LoadKnownWorkAsync(string filePath)
+        {
+            var json = await File.ReadAllTextAsync(filePath);
+            var load = Newtonsoft.Json.JsonConvert.DeserializeObject<ReplicationData>(json);
+            if (null == load.subscribe) throw new BadInitializationException("No subscribe information");
+            if (null == load.job) throw new BadInitializationException("No job information");
+            return load;
         }
 
         private static void NewDeviceOnline(Devices.TurnOnArgs<IPEndPoint> e, IPAddress myAddr)
@@ -113,6 +84,12 @@ namespace fastdee
             Console.WriteLine($"Model common: {BitConverter.ToString(e.identificator)}");
             Console.WriteLine($"Device-specific: {BitConverter.ToString(e.deviceSpecific)}");
         }
+
+        private static void ShowWorkUnitDispatched(WorkRequestArgs<IPEndPoint> ev, RequestedWork workUnit)
+        {
+            Console.WriteLine($"Gave {ev.originator.Address}:{ev.originator.Port} work unit {workUnit.wid}, scanning from {workUnit.nonceBase}, {ev.scanCount}");
+        }
+
 
         static Stratum.Response.MiningSubscribe MakeSubscribe(ReplicationData.Subscribe repl)
         {
@@ -161,11 +138,12 @@ namespace fastdee
             return 4;
         }
 
-        static void ShowNonceInfo(Work work, ulong increment, byte[] hash)
+        static void ShowNonceInfo(Work work, ulong increment, byte[]? hash)
         {
             var nonce = work.nonceBase + increment;
             Console.WriteLine($"WU: {work.uniq}, found nonce: {nonce:x16}");
-            if (hash.Length != 0) {
+            if (null != hash && hash.Length != 0)
+            { // if not null, len > 0 but let's check both.
                 string hashString;
                 if (hash.Length % 8 == 0) hashString = HashString(hash, 8);
                 else if (hash.Length % 4 == 0) hashString = HashString(hash, 4);
@@ -181,7 +159,8 @@ namespace fastdee
         {
             var bld = new System.Text.StringBuilder(hash.Length * 2 + 100); // plus some separators
             var count = 0;
-            foreach (var oct in hash) {
+            foreach (var oct in hash)
+            {
                 if (count != 0)
                 {
                     if (count % 8 == 0 || count % width == 0) bld.Append(' ');
