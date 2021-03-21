@@ -70,6 +70,11 @@ namespace fastdee.Stratum
             return res;
         }
 
+        /// <summary>
+        /// Returns data you can (ab)use to roll a new nonce2 or header in general.
+        /// </summary>
+        public ShareSubmitInfo? Currently => both?.info;
+
         internal void SetTarget(DifficultyTarget target) => this.target = target;
 
         internal void Stop()

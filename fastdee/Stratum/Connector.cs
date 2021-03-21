@@ -98,7 +98,6 @@ namespace fastdee.Stratum
                 var persist = careful.headerGenerator.Header.ToArray();
                 careful.workMaker.SetHeader(tracking, persist);
             }
-
         }
 
         internal Work? GenWork(uint nonceRange)
@@ -106,7 +105,21 @@ namespace fastdee.Stratum
             lock (careful)
             {
                 if (careful.phase != ConnectionPhase.GotWork) return null;
-                return careful.workMaker.WannaConsume(nonceRange); // TODO: seems like a good place for n2 roll
+                var currently = careful.workMaker.Currently;
+                if (null == currently) return null; // should be impossible if GotWork but static analysis does not know
+                try
+                {
+                    return careful.workMaker.WannaConsume(nonceRange);
+                }
+                catch (LowScanRangeExhaustedException)
+                {
+                    careful.headerGenerator.Roll();
+                    var nonce2 = careful.headerGenerator.CopyNonce2();
+                    var tracking = new ShareSubmitInfo(currently.JobId, nonce2, currently.NetworkTime);
+                    careful.workMaker.SetHeader(tracking, careful.headerGenerator.Header.ToArray());
+                    Console.WriteLine("INFO: n2 roll");
+                }
+                return careful.workMaker.WannaConsume(nonceRange); // if it fails now real bad things must have happened
             }
         }
 
