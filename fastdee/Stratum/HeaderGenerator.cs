@@ -125,7 +125,9 @@ namespace fastdee.Stratum
         /// </summary>
         internal void Roll()
         {
-            throw new NotImplementedException();
+            if (null == currently) throw new InvalidOperationException("Must provide work info to track before nonce2 can be rolled.");
+            nonce2.Consumed();
+            header = AssembleHeader(currently, extraNonceOne, nonce2, initialMerkle);
         }
 
         internal byte[] CopyNonce2()
