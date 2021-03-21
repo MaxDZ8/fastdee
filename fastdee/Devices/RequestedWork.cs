@@ -33,6 +33,8 @@ namespace fastdee.Devices
         /// <summary>
         /// A bit redundant with the information in <see cref="Stratum.Work.nonceBase"/> but it simplifies
         /// life of device adapters considerably.
+        /// 
+        /// Note: not all kernels support truly 64-bit nonce, but this is the most generic version. Try sticking to 32-bit.
         /// </summary>
         internal readonly ulong nonceBase;
 

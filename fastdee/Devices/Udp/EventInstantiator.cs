@@ -23,7 +23,7 @@ namespace fastdee.Devices.Udp
         internal static WorkRequestArgs<IPEndPoint> GimmeWork(IPEndPoint origin, ReadOnlySpan<byte> buff)
         {
             buff = LoadOps.LoadUshort(buff, out var kind);
-            buff = LoadOps.LoadUlong(buff, out var reservation);
+            buff = LoadOps.LoadUint(buff, out var reservation);
             ThrowIfNotFullyConsumed(buff);
             var format = (WireAlgoFormat)kind;
             return new WorkRequestArgs<IPEndPoint>(origin, format, reservation);

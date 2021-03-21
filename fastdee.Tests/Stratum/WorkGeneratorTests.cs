@@ -78,8 +78,8 @@ namespace fastdee.Stratum.Tests
             var uut = new WorkGenerator();
             uut.SetHeader(DummySubmit, new byte[] { 1 });
             uut.SetTarget(new DifficultyTarget());
-            uut.WannaConsume(ulong.MaxValue - 1);
             Assert.Throws<ArgumentException>(() => uut.WannaConsume(2)); // you must roll a new nonce2 and feed me a new header.
+            uut.WannaConsume(uint.MaxValue - 1);
         }
 
         [Fact]
@@ -88,7 +88,7 @@ namespace fastdee.Stratum.Tests
             var uut = new WorkGenerator();
             uut.SetHeader(DummySubmit, new byte[] { 1 });
             uut.SetTarget(new DifficultyTarget());
-            uut.WannaConsume(ulong.MaxValue - 2);
+            uut.WannaConsume(uint.MaxValue - 2);
             uut.SetHeader(DummySubmit, new byte[] { 1 }); // it compares by value!
             Assert.Throws<ArgumentException>(() => uut.WannaConsume(3)); // you must roll a new nonce2 and feed me a new header.
         }
@@ -99,7 +99,7 @@ namespace fastdee.Stratum.Tests
             var uut = new WorkGenerator();
             uut.SetHeader(DummySubmit, new byte[] { 1 });
             uut.SetTarget(new DifficultyTarget());
-            uut.WannaConsume(ulong.MaxValue - 50);
+            uut.WannaConsume(uint.MaxValue - 50);
             uut.SetHeader(DummySubmit, new byte[] { 2 });
             Assert.Equal(0u, uut.ConsumedNonces);
         }
@@ -131,8 +131,8 @@ namespace fastdee.Stratum.Tests
         public void CanSetStartingNonce()
         {
             var uut = new WorkGenerator();
-            uut.NextNonce(0x12345678_9ABCDEF0u);
-            Assert.Equal(0x123456789ABCDEF0u, uut.ConsumedNonces);
+            uut.NextNonce(0x12345678u);
+            Assert.Equal(0x12345678u, uut.ConsumedNonces);
         }
 
         static ShareSubmitInfo DummySubmit => new ShareSubmitInfo("ueht", new byte[] { 1, 2, 3, 4 }, new byte[] { 0, 1, 23, 45 });

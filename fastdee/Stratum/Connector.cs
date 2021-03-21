@@ -38,7 +38,7 @@ namespace fastdee.Stratum
             careful = new Delicate(headerMaker, diffCalc);
         }
 
-        public void StartingNonce(ulong nonceStart)
+        public void StartingNonce(uint nonceStart)
         {
             lock (careful) careful.workMaker.NextNonce(nonceStart);
         }
@@ -101,7 +101,7 @@ namespace fastdee.Stratum
 
         }
 
-        internal Work? GenWork(ulong nonceRange)
+        internal Work? GenWork(uint nonceRange)
         {
             lock (careful)
             {

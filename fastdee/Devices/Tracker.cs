@@ -16,7 +16,7 @@ namespace fastdee.Devices
     /// <typeparam name="T">Unique "address" of the worker in the network.</typeparam>
     class Tracker<T> where T : notnull
     {
-        readonly Func<ulong, Work?> genWork;
+        readonly Func<uint, Work?> genWork;
         /// <summary>
         /// As always, this is going to be locked because I'm not sure I don't want group operations in the future.
         /// </summary>
@@ -32,7 +32,7 @@ namespace fastdee.Devices
         /// inappropriate as 1- does not roll nonce2 2- con throw if exhausted, and other bad things.
         /// The function can return null when no work is to be given - the device will go idle.
         /// </param>
-        public Tracker(Func<ulong, Work?> genWork)
+        public Tracker(Func<uint, Work?> genWork)
         {
             this.genWork = genWork;
         }
@@ -57,7 +57,7 @@ namespace fastdee.Devices
         /// I'm happy with it.
         /// </summary>
         /// <returns>Null if no work available to be given.</returns>
-        internal RequestedWork? ConsumeNonces(T originator, ulong scanCount)
+        internal RequestedWork? ConsumeNonces(T originator, uint scanCount)
         {
             var devInfo = GetCurrently(originator);
             RequestedWork cooked;

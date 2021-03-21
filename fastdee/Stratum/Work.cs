@@ -8,11 +8,11 @@ namespace fastdee.Stratum
         internal readonly IReadOnlyList<byte> header;
         internal readonly ShareSubmitInfo info;
         internal readonly ulong uniq;
-        internal readonly ulong nonceBase;
+        internal readonly uint nonceBase;
 
         static internal ulong GeneratedSoFar => next;
 
-        internal Work(DifficultyTarget target, IReadOnlyList<byte> header, ShareSubmitInfo info, ulong nonceBase)
+        internal Work(DifficultyTarget target, IReadOnlyList<byte> header, ShareSubmitInfo info, uint nonceBase)
         {
             this.target = target;
             this.header = header;
