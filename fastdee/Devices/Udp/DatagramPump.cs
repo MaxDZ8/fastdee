@@ -69,9 +69,13 @@ namespace fastdee.Devices.Udp
                     if (res.ReceivedBytes == buffer.Length) throw new NotImplementedException("UDP packets must be less than 4096 bytes!");
                     Process(buffer, res);
                 }
-                catch
+                catch(Exception ex)
                 {
                     // Just suppress it. In the future I'll need to choose a logging library and decide what to do.
+                    // (but for the time being, dumping to console doesn't hurt)
+                    Console.WriteLine("Uncaught exception in datagram pump v v v v v v v");
+                    Console.WriteLine(ex.Message);
+                    Console.WriteLine("^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^,");
                     break;
                 }
             }
