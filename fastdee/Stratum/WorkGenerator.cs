@@ -63,8 +63,8 @@ namespace fastdee.Stratum
                 throw new InvalidOperationException("won't produce work before being fed");
             }
             if (nonceCount == 0) throw new ArgumentException("you must consume at least a nonce", nameof(nonceCount));
-            if (rem < nonceCount) throw new ArgumentException("too many nonces requested", nameof(nonceCount));
             var rem = uint.MaxValue - ConsumedNonces; // better to stick on 32 bit scan ranges and roll n2.
+            if (rem < nonceCount) throw new LowScanRangeExhaustedException();
             var res = new Work(target, both.header, both.info, ConsumedNonces);
             ConsumedNonces += nonceCount;
             return res;

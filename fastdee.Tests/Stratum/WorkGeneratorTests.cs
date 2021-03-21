@@ -78,8 +78,8 @@ namespace fastdee.Stratum.Tests
             var uut = new WorkGenerator();
             uut.SetHeader(DummySubmit, new byte[] { 1 });
             uut.SetTarget(new DifficultyTarget());
-            Assert.Throws<ArgumentException>(() => uut.WannaConsume(2)); // you must roll a new nonce2 and feed me a new header.
             uut.WannaConsume(uint.MaxValue - 1);
+            Assert.Throws<LowScanRangeExhaustedException>(() => uut.WannaConsume(2)); // you must roll a new nonce2 and feed me a new header.
         }
 
         [Fact]
@@ -90,7 +90,7 @@ namespace fastdee.Stratum.Tests
             uut.SetTarget(new DifficultyTarget());
             uut.WannaConsume(uint.MaxValue - 2);
             uut.SetHeader(DummySubmit, new byte[] { 1 }); // it compares by value!
-            Assert.Throws<ArgumentException>(() => uut.WannaConsume(3)); // you must roll a new nonce2 and feed me a new header.
+            Assert.Throws<LowScanRangeExhaustedException>(() => uut.WannaConsume(3)); // you must roll a new nonce2 and feed me a new header.
         }
 
         [Fact]
