@@ -120,6 +120,14 @@ namespace fastdee.Stratum
 
         internal void NextNonce(ulong n) => nonce2.NextNonce(n);
 
+        /// <summary>
+        /// In line of theory you could decode the n2 yourself and then this would be just sugar.
+        /// </summary>
+        internal void Roll()
+        {
+            throw new NotImplementedException();
+        }
+
         internal byte[] CopyNonce2()
         {
             var buff = new byte[nonce2.ByteCount];

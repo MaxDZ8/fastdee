@@ -47,6 +47,27 @@ namespace fastdee.Stratum.Tests
 
         }
 
+        [Fact]
+        public void CannotRollNonce2WithoutGivingWorkFirst()
+        {
+            var uut = new HeaderGenerator(PoolOps.Merkles.SingleSha);
+            uut.NonceSettings(new byte[] { 0x08, 0x00, 0x22, 0xb3 }, 4);
+            Assert.Throws<InvalidOperationException>(() => uut.Roll());
+        }
+
+        [Fact]
+        public void RollNextNonce2()
+        {
+            var uut = new HeaderGenerator(PoolOps.Merkles.SingleSha);
+            var pack = ObservedJob();
+            uut.NonceSettings(new byte[] { 0x08, 0x00, 0x22, 0xb3 }, 4);
+            uut.NewJob(pack);
+            uut.Roll();
+            uut.Roll();
+            uut.Roll();
+            Assert.Equal(new byte[] { 3, 0, 0, 0 }, uut.CopyNonce2());
+        }
+
 
         static Mining.Merkle AsMerkle(ReadOnlySpan<byte> blob) {
             var res = new Mining.Merkle();
