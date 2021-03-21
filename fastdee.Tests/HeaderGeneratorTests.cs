@@ -36,6 +36,17 @@ namespace fastdee.Stratum.Tests
             Assert.Equal(expected, uut.Header.ToArray());
         }
 
+        [Fact]
+        public void InitialNonce2IsZero()
+        {
+            var uut = new HeaderGenerator(PoolOps.Merkles.SingleSha);
+            var pack = ObservedJob();
+            uut.NonceSettings(new byte[] { 0x08, 0x00, 0x22, 0xb3 }, 4);
+            uut.NewJob(pack);
+            Assert.Equal(new byte[] { 0, 0, 0, 0 }, uut.CopyNonce2());
+
+        }
+
 
         static Mining.Merkle AsMerkle(ReadOnlySpan<byte> blob) {
             var res = new Mining.Merkle();
