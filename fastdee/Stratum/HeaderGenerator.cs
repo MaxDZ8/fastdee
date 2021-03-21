@@ -51,7 +51,7 @@ namespace fastdee.Stratum
         private static byte[] AssembleHeader(Notification.NewJob job, byte[] extraNonceOne, PoolOps.CanonicalNonce2Roller nonce2, FromCoinbaseFunc initialMerkle) {
             var nonce2Off = job.cbHead.Length + extraNonceOne.Length;
             var coinbase = MakeCoinbaseTemplate(job.cbHead, extraNonceOne, nonce2Off, nonce2.ByteCount, job.cbTail);
-            StampNonce2(coinbase, nonce2Off, nonce2);
+            nonce2.CopyIntoBuffer(new Span<byte>(coinbase, nonce2Off, nonce2.ByteCount));
             var merkle = MakeNewMerkles(initialMerkle, job.merkles, coinbase);
             SwapUintBytes(merkle); // that's from stratum documentation
             var header = job.blockVer.Concat(job.prevBlock.blob).Concat(merkle);
@@ -59,7 +59,7 @@ namespace fastdee.Stratum
             header = header.Concat(job.ntime).Concat(job.networkDiff);
             header = header.Concat(noncePad); // nonce to be tested
             header = header.Concat(workPadding);
-            var result = header.ToArray();;
+            var result = header.ToArray();
 
             // But legacy miners have a quirk. They just zero out the whole thing (at least in the code I have checked).
             result[^45] = 0;
@@ -86,11 +86,6 @@ namespace fastdee.Stratum
             Array.Copy(extraNonce1, 0, res, cbHead.Length, extraNonce1.Length);
             Array.Copy(cbTail, 0, res, n2off + n2sz, cbTail.Length);
             return res;
-        }
-
-        static void StampNonce2(byte[] coinbase, int nonce2Off, IExtraNonce2Provider nonce2)
-        {
-            nonce2.CopyIntoBuffer(new Span<byte>(coinbase, nonce2Off, nonce2.ByteCount));
         }
 
         static byte[] MakeNewMerkles(FromCoinbaseFunc merkleMaker, IReadOnlyList<Mining.Merkle> merkles, byte[] coinbase)
