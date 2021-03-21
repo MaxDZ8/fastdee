@@ -20,7 +20,6 @@ namespace fastdee.Stratum
 
         Notification.NewJob? currently;
 
-        int nonce2Off;
         byte[] header = Array.Empty<byte>();
 
         readonly FromCoinbaseFunc initialMerkle;
@@ -45,8 +44,12 @@ namespace fastdee.Stratum
 
         public void NewJob(Notification.NewJob job)
         {
+            header = AssembleHeader(job, extraNonceOne, nonce2, initialMerkle);
             currently = job;
-            nonce2Off = job.cbHead.Length + extraNonceOne.Length;
+        }
+
+        private static byte[] AssembleHeader(Notification.NewJob job, byte[] extraNonceOne, PoolOps.CanonicalNonce2Roller nonce2, FromCoinbaseFunc initialMerkle) {
+            var nonce2Off = job.cbHead.Length + extraNonceOne.Length;
             var coinbase = MakeCoinbaseTemplate(job.cbHead, extraNonceOne, nonce2Off, nonce2.ByteCount, job.cbTail);
             StampNonce2(coinbase, nonce2Off, nonce2);
             var merkle = MakeNewMerkles(initialMerkle, job.merkles, coinbase);
@@ -56,12 +59,13 @@ namespace fastdee.Stratum
             header = header.Concat(job.ntime).Concat(job.networkDiff);
             header = header.Concat(noncePad); // nonce to be tested
             header = header.Concat(workPadding);
-            this.header = header.ToArray();
+            var result = header.ToArray();;
 
             // But legacy miners have a quirk. They just zero out the whole thing (at least in the code I have checked).
-            this.header[^45] = 0;
-            this.header[^4] = 0;
-            this.header[^3] = 0;
+            result[^45] = 0;
+            result[^4] = 0;
+            result[^3] = 0;
+            return result;
         }
 
         static readonly byte[] noncePad = new byte[] { 0, 0, 0, 0 };
