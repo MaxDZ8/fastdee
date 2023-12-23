@@ -6,3 +6,9 @@ fastdee.Tests/bin/
 fastdee/Properties/launchSettings.json
 /fastdee.Tests/TestResults/
 fastdee/captured-keccak.json
+Mdz.Fastdee.BinaryProtocol/obj/Debug/
+Mdz.Fastdee.BinaryProtocol/bin/Debug/
+FlatBuffers/obj/Debug/
+FlatBuffers/bin/Debug/
+FlatBuffers/obj/project.nuget.cache
+Mdz.Fastdee.BinaryProtocol/obj/project.nuget.cache
