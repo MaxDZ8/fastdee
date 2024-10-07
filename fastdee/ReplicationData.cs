@@ -26,7 +26,7 @@ namespace fastdee
         internal ulong nonce2off;
 
         [JsonProperty("nonceStart")]
-        internal ulong nonceStart;
+        internal uint nonceStart;
 
         internal class Subscribe
         {

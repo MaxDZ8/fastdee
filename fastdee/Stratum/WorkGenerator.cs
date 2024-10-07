@@ -30,9 +30,9 @@ namespace fastdee.Stratum
 
         public bool Empty => null == target || null == both;
 
-        public ulong ConsumedNonces { get; private set; }
+        public uint ConsumedNonces { get; private set; }
 
-        public void NextNonce(ulong value) { ConsumedNonces = value; }
+        public void NextNonce(uint value) { ConsumedNonces = value; }
 
         internal void SetHeader(ShareSubmitInfo tracking, IReadOnlyList<byte> hdr)
         {
@@ -55,7 +55,7 @@ namespace fastdee.Stratum
         /// Workers request to scan an amount of nonces.
         /// </summary>
         /// <param name="nonceCount">Contiguous nonces the worker plans to test.</param>
-        internal Work WannaConsume(ulong nonceCount)
+        internal Work WannaConsume(uint nonceCount)
         {
             if (null == target || null == both)
             {
@@ -63,12 +63,17 @@ namespace fastdee.Stratum
                 throw new InvalidOperationException("won't produce work before being fed");
             }
             if (nonceCount == 0) throw new ArgumentException("you must consume at least a nonce", nameof(nonceCount));
-            var rem = ulong.MaxValue - ConsumedNonces;
-            if (rem < nonceCount) throw new ArgumentException("too many nonces requested", nameof(nonceCount));
+            var rem = uint.MaxValue - ConsumedNonces; // better to stick on 32 bit scan ranges and roll n2.
+            if (rem < nonceCount) throw new LowScanRangeExhaustedException();
             var res = new Work(target, both.header, both.info, ConsumedNonces);
             ConsumedNonces += nonceCount;
             return res;
         }
+
+        /// <summary>
+        /// Returns data you can (ab)use to roll a new nonce2 or header in general.
+        /// </summary>
+        public ShareSubmitInfo? Currently => both?.info;
 
         internal void SetTarget(DifficultyTarget target) => this.target = target;
 

@@ -20,7 +20,6 @@ namespace fastdee.Stratum
 
         Notification.NewJob? currently;
 
-        int nonce2Off;
         byte[] header = Array.Empty<byte>();
 
         readonly FromCoinbaseFunc initialMerkle;
@@ -45,10 +44,14 @@ namespace fastdee.Stratum
 
         public void NewJob(Notification.NewJob job)
         {
+            header = AssembleHeader(job, extraNonceOne, nonce2, initialMerkle);
             currently = job;
-            nonce2Off = job.cbHead.Length + extraNonceOne.Length;
+        }
+
+        private static byte[] AssembleHeader(Notification.NewJob job, byte[] extraNonceOne, PoolOps.CanonicalNonce2Roller nonce2, FromCoinbaseFunc initialMerkle) {
+            var nonce2Off = job.cbHead.Length + extraNonceOne.Length;
             var coinbase = MakeCoinbaseTemplate(job.cbHead, extraNonceOne, nonce2Off, nonce2.ByteCount, job.cbTail);
-            StampNonce2(coinbase, nonce2Off, nonce2);
+            nonce2.CopyIntoBuffer(new Span<byte>(coinbase, nonce2Off, nonce2.ByteCount));
             var merkle = MakeNewMerkles(initialMerkle, job.merkles, coinbase);
             SwapUintBytes(merkle); // that's from stratum documentation
             var header = job.blockVer.Concat(job.prevBlock.blob).Concat(merkle);
@@ -56,12 +59,13 @@ namespace fastdee.Stratum
             header = header.Concat(job.ntime).Concat(job.networkDiff);
             header = header.Concat(noncePad); // nonce to be tested
             header = header.Concat(workPadding);
-            this.header = header.ToArray();
+            var result = header.ToArray();
 
             // But legacy miners have a quirk. They just zero out the whole thing (at least in the code I have checked).
-            this.header[^45] = 0;
-            this.header[^4] = 0;
-            this.header[^3] = 0;
+            result[^45] = 0;
+            result[^4] = 0;
+            result[^3] = 0;
+            return result;
         }
 
         static readonly byte[] noncePad = new byte[] { 0, 0, 0, 0 };
@@ -82,11 +86,6 @@ namespace fastdee.Stratum
             Array.Copy(extraNonce1, 0, res, cbHead.Length, extraNonce1.Length);
             Array.Copy(cbTail, 0, res, n2off + n2sz, cbTail.Length);
             return res;
-        }
-
-        static void StampNonce2(byte[] coinbase, int nonce2Off, IExtraNonce2Provider nonce2)
-        {
-            nonce2.CopyIntoBuffer(new Span<byte>(coinbase, nonce2Off, nonce2.ByteCount));
         }
 
         static byte[] MakeNewMerkles(FromCoinbaseFunc merkleMaker, IReadOnlyList<Mining.Merkle> merkles, byte[] coinbase)
@@ -115,6 +114,16 @@ namespace fastdee.Stratum
         }
 
         internal void NextNonce(ulong n) => nonce2.NextNonce(n);
+
+        /// <summary>
+        /// In line of theory you could decode the n2 yourself and then this would be just sugar.
+        /// </summary>
+        internal void Roll()
+        {
+            if (null == currently) throw new InvalidOperationException("Must provide work info to track before nonce2 can be rolled.");
+            nonce2.Consumed();
+            header = AssembleHeader(currently, extraNonceOne, nonce2, initialMerkle);
+        }
 
         internal byte[] CopyNonce2()
         {

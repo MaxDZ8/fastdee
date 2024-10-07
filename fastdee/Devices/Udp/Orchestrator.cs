@@ -42,7 +42,7 @@ namespace fastdee.Devices.Udp
         /// </summary>
         /// <param name="originator">The requesting device</param>
         /// <param name="scanAmount">How many nonces to be reserved for the remote scan operation.</param>
-        internal delegate RequestedWork? GenWorkFunc(IPEndPoint originator, ulong scanAmount);
+        internal delegate RequestedWork? GenWorkFunc(IPEndPoint originator, uint scanAmount);
 
         /// <summary>
         /// Before pumping the messages there is some additional setup to carry out.
@@ -64,7 +64,9 @@ namespace fastdee.Devices.Udp
             embeddedServer.WorkAsked += (src, ev) =>
             {
                 if (ev.algoFormat != WireAlgoFormat.Keccak) return; // the idea is each fastdee instance runs a single algo
-                var workUnit = genWork(ev.originator, ev.scanCount);
+                if (ev.scanCount > uint.MaxValue) return; // for the time being, I have decided to support only 32bit scan ranges.
+                var scanRange = (uint)ev.scanCount;
+                var workUnit = genWork(ev.originator, scanRange);
                 if (null == workUnit) return;
                 /* ^ The device will keep asking and it'll be quite noisy.
                  * All things considered I have decided this is the right approach because such traffic which gets increasingly common

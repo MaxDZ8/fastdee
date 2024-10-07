@@ -57,13 +57,13 @@ namespace fastdee.Tests.Devices.Udp
             var bin = new byte[] {
                 (byte)fastdee.Devices.WireAlgoFormat.Keccak, // algo lo
                 0, // algo hi - big endian
-                0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF1 // nonce count, big endian
+                0x12, 0x34, 0x56, 0x78 // nonce count, big endian
             };
             var pretending = Dummy;
             var magic = EventInstantiator.GimmeWork(pretending, bin);
             Assert.Same(pretending, magic.originator);
             Assert.Equal(fastdee.Devices.WireAlgoFormat.Keccak, magic.algoFormat);
-            Assert.Equal(0xF1DEBC9A78563412ul, magic.scanCount);
+            Assert.Equal(0x78563412ul, magic.scanCount);
         }
 
         [Fact]

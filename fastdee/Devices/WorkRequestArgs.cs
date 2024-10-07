@@ -9,9 +9,14 @@
     {
         public readonly A originator;
         public readonly WireAlgoFormat algoFormat;
-        public readonly ulong scanCount;
+        /// <summary>
+        /// In line of theory, a scan count of 4G is real small but in practice many algorithms are baked with 32bit
+        /// scan ranges in mind. All things considered, I figured it is better to just stick with the basics for the time being,
+        /// until a better usage model emerges.
+        /// </summary>
+        public readonly uint scanCount;
 
-        public WorkRequestArgs(A originator, WireAlgoFormat algoFormat, ulong reserve)
+        public WorkRequestArgs(A originator, WireAlgoFormat algoFormat, uint reserve)
         {
             this.originator = originator;
             this.algoFormat = algoFormat;
